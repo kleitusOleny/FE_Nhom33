@@ -1,4 +1,4 @@
-import {createBrowserRouter} from "react-router";
+import {createBrowserRouter} from "react-router-dom";
 import Error from "./Error.tsx";
 import Layout from "./Layout.tsx";
 import Home from "../component/Home.tsx";
@@ -24,7 +24,15 @@ export const router = createBrowserRouter([
             {
                 path:"chat",
                 element: null,
-            }
+            },
+            {
+                path: "error",
+                element: <Error />,
+            },
+            {
+                path: "*",
+                element: <Error />,
+            },
         ]
     }
 ])
