@@ -23,6 +23,7 @@ export function ChatSideBar() {
                 <div>
                     {listFeature.map((ele, index) => (
                         <div
+                            key={index}
                             className={`p-3 my-1 rounded-md flex flex-col items-center justify-center hover:bg-indigo-800/50 text-neutral-50 ${featureIndex === index && "bg-indigo-900 hover:bg-indigo-800"}`}
                             title={ele.name}
                             onClick={() => {
@@ -36,6 +37,7 @@ export function ChatSideBar() {
                             {ele.icon}
                         </div>
                     ))}
+
                 </div>
 
                 <div className="">
@@ -52,6 +54,7 @@ export function ChatSideBar() {
                     <div className="flex flex-1 h-16 gap-6 justify-center">
                         {listFeature.map((ele, index) => (
                             <div
+                                key={index}
                                 className={`p-1 px-2 my-1 rounded-md flex flex-col items-center justify-center hover:bg-indigo-800/50 text-neutral-50 ${featureIndex === index && "bg-indigo-900 hover:bg-indigo-800"}`}
                                 title={ele.name}
                                 onClick={() => {
@@ -66,6 +69,7 @@ export function ChatSideBar() {
                                 <p className="text-xs mt-1">{ele.name}</p>
                             </div>
                         ))}
+
                         {/* User avatar */}
                         <img
                             className="px-2 my-1.5 w-12 h-12 rounded-full border p-2 bg-white text-black border-black bg-gray-150 flex justify-center items-center"
