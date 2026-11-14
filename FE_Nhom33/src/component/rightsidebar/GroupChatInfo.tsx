@@ -15,10 +15,28 @@ import {QuickActions, MediaSection, FilesSection, PrivacySection} from "./Shared
 //     onAddMember?: () => void;
 // }
 
-export default function GroupChatInfo({groupName = "Nhóm Đồ Án 33", members = [
-                                              { name: "Bạn (Trưởng nhóm)", role: "Trưởng nhóm", isLeader: true },
-                                              { name: "Nguyễn Văn A", role: "Thành viên", isLeader: false },
-                                          ], isActive = true, onAddMember}) {
+interface GroupMember {
+    name: string;
+    role: string;
+    isLeader?: boolean;
+}
+
+interface GroupChatInfoProps {
+    groupName?: string;
+    members?: GroupMember[];
+    isActive?: boolean;
+    onAddMember?: () => void;
+}
+
+export default function GroupChatInfo({
+    groupName = "Nhóm Đồ Án 33",
+    members = [
+        { name: "Bạn (Trưởng nhóm)", role: "Trưởng nhóm", isLeader: true },
+        { name: "Nguyễn Văn A", role: "Thành viên", isLeader: false },
+    ],
+    isActive = true,
+    onAddMember,
+}: GroupChatInfoProps) {
     const [openMembers, setOpenMembers] = useState(true);
 
     return (
