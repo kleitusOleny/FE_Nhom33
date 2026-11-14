@@ -5,5 +5,12 @@ export function checkPasswordCriteria(password: string, rePassword: string) {
       hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password),
       hasNumber: /\d/.test(password),
       isMatched: password.length > 0 && password === rePassword,
+      noSpaces: !/\s/.test(password)
     };
   }
+
+export function checkUsernameCriteria(username: string) {
+  return {
+    noSpecialChar: /^[a-zA-Z0-9_]+$/.test(username)
+  }
+}
