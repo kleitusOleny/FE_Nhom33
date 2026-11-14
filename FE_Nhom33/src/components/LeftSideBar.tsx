@@ -1,5 +1,5 @@
-import Search from "@/component/leftsidebar/Search.tsx";
-import ChatFilterBar from "@/component/leftsidebar/ChatFilterBar.tsx";
+import Search from "@/components/leftsidebar/Search.tsx";
+import ChatFilterBar from "@/components/leftsidebar/ChatFilterBar.tsx";
 
 export default function LeftSideBar() {
     return (
