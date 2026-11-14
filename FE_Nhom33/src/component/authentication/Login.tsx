@@ -1,3 +1,5 @@
+import {Link} from "react-router-dom";
+
 export default function Login() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
@@ -18,6 +20,13 @@ export default function Login() {
             <button type="submit" className="mt-2 w-full rounded-lg bg-blue-700 py-2.5 font-medium text-white transition hover:bg-blue-800 cursor-pointer">
               Đăng nhập
             </button>
+              <div className="mt-2 text-center text-sm text-gray-600">
+                  Chưa có tài khoản?{" "}
+                  <Link to="/register"
+                        className="font-semibold text-blue-700 hover:text-blue-800 hover:underline cursor-pointer">
+                      Đăng ký ngay
+                  </Link>
+              </div>
           </div>
         </form>
       </div>
