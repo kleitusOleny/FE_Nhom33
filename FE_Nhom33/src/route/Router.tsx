@@ -1,7 +1,10 @@
 import {createBrowserRouter} from "react-router-dom";
 import Error from "./Error.tsx";
 import Layout from "./Layout.tsx";
-import Home from "../components/Home.tsx";
+import Home from "../component/Home.tsx";
+import Login from "../component/authentication/Login.tsx";
+import Register from "../component/authentication/Register.tsx";
+
 export const router = createBrowserRouter([
     {
         path: "/",
@@ -15,11 +18,11 @@ export const router = createBrowserRouter([
             },
             {
                 path:"login",
-                element: null,
+                element: <Login/>,
             },
             {
                 path:"register",
-                element:null,
+                element: <Register/>,
             },
             {
                 path:"chat",
