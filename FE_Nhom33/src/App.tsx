@@ -4,8 +4,9 @@ import './App.css';
 import { useEffect } from 'react';
 import { useSelector } from "react-redux";
 import type { ReduxState } from "@/constants/ReduxState.ts";
-
+import {useSocketConnection} from "@/socket/useSocketConnection.ts";
 function App() {
+    useSocketConnection();
     const theme = useSelector((state: ReduxState) => state.userPageState.theme);
     useEffect(() => {
         const root = document.documentElement;
