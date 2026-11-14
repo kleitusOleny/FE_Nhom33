@@ -7,8 +7,8 @@ export default function RightSideBar({isGroup = false, isActive = true,}) {
             <div className="h-16 px-4 border-b border-gray-200 flex items-center justify-between shrink-0 bg-white">
                 <h3 className="font-bold text-gray-800 text-base">Thông tin hội thoại</h3>
             </div>
-
-            {isGroup ? (<GroupChatInfo isActive={isActive} onAddMember />):(<UserChatInfo isActive={isActive} />)}
+            {/*{isGroup ? (<GroupChatInfo isActive={isActive} onAddMember />):(<UserChatInfo isActive={isActive} />)}*/}
+            {isGroup ? (<GroupChatInfo isActive={isActive} />):(<UserChatInfo isActive={isActive} />)}
         </aside>
     );
 }
