@@ -1,30 +1,82 @@
-import { useState } from "react";
-import { checkPasswordCriteria } from "./Verification";
+import { useState, type SubmitEvent } from "react";
+import { useNavigate } from "react-router-dom";
+import { checkPasswordCriteria, checkUsernameCriteria } from "./Verification";
+// import { sendChatEvent } from "../../services/wsClient";
 
 export default function Register() {
+  const navigate = useNavigate();
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [rePassword, setRePassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const rules = checkPasswordCriteria(password, rePassword);
+  const rulesUsername = checkUsernameCriteria(username.trim());
+
+  const isUsernameValid = rulesUsername.noSpecialChar;
+  const isPasswordValid = rules.hasMinLength && rules.hasUpperLower && rules.hasSpecialChar && rules.hasNumber && rules.isMatched && rules.noSpaces;
+
+  async function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError("");
+    if (!isPasswordValid || !isUsernameValid) {
+      setError("Vui lòng đảm bảo rằng tên đăng nhập và mật khẩu đáp ứng tất cả các yêu cầu");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // giả lập ws để test validate
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      navigate("/login");
+
+      // const res = await sendChatEvent<string>("REGISTER", {
+      //   user: username,
+      //   pass: password,
+      // });
+      //
+      // if (res.status === "success") {
+      //   navigate("/login");
+      //   return;
+      // }
+      //
+      // setError(res.mes || "Đăng ký thất bại");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Lỗi kết nối máy chủ");
+    } finally {
+      setLoading(false);
+    }
+  }
 
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-        <form className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-8 shadow-md">
+        <form onSubmit={handleSubmit} className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-8 shadow-md">
           <div className="flex flex-col items-center justify-center gap-1 mb-6 select-none">
             <h2 className="text-center text-2xl font-bold text-gray-800">Đăng kí tài khoản</h2>
             <h3 className="text-center text-1xl text-gray-800">Cùng tham gia trò chuyện với mọi người</h3>
           </div>
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
             <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-gray-700 select-none">Tên đăng nhập</label>
-                <input type="text" placeholder="VD: nguyenan" className="w-full rounded-lg border border-gray-300 px-3.5 py-2 text-sm outline-none transition focus:border-blue-950 focus:ring-1 focus:ring-blue-100"/>
+                <input type="text" 
+                placeholder="VD: nguyenan_2" 
+                value={username} 
+                onChange={(e) => setUsername(e.target.value.replace(/\s+/g, ""))} 
+                className="w-full rounded-lg border border-gray-300 px-3.5 py-2 text-sm outline-none transition focus:border-blue-950 focus:ring-1 focus:ring-blue-100"/>
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex items-center select-none mt-2">
+              <input type="checkbox" disabled
+                checked={rulesUsername.noSpecialChar}
+                className="mr-2 leading-tight"/>
+              <span className={`text-sm leading-none transition-colors ${rulesUsername.noSpecialChar ? "text-emerald-600" : "text-gray-700"}`}>Tên người dùng chỉ bao gồm chữ cái, số và dấu gạch dưới</span>
+            </div>
+            <div className="flex flex-col gap-1.5 mt-2">
                 <div>
                     <label className="text-sm font-medium text-gray-700 select-none">Nhập mật khẩu</label>
                     <input type="password" 
-                    placeholder="VD: nguyenan@2" 
+                    placeholder="VD: Nguyenan@2" 
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => setPassword(e.target.value.replace(/\s+/g, ""))}
                     className="w-full rounded-lg border border-gray-300 px-3.5 py-2 text-sm outline-none transition focus:border-blue-950 focus:ring-1 focus:ring-blue-100"/>
                 </div>
                 <div className="flex flex-col gap-1.5 mt-2">
@@ -54,24 +106,26 @@ export default function Register() {
                     </div>
                 </div>
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5 mt-2">
                 <div>
                     <label className="text-sm font-medium text-gray-700 select-none">Nhập lại mật khẩu</label>
                     <input type="password" 
-                    placeholder="VD: nguyenan@2"
+                    placeholder="VD: Nguyenan@2"
                     value={rePassword}
-                    onChange={(e) => setRePassword(e.target.value)}
+                    onChange={(e) => setRePassword(e.target.value.replace(/\s+/g, ""))}
                     className="w-full rounded-lg border border-gray-300 px-3.5 py-2 text-sm outline-none transition focus:border-blue-950 focus:ring-1 focus:ring-blue-100"/>
                 </div>
-                <div className="flex items-center select-none mt-2">
+                <div className="flex items-center select-none mt-1">
                     <input type="checkbox" disabled 
                     checked={rules.isMatched}
                     className="mr-2 leading-tight"/>
                     <span className={`text-sm leading-none transition-colors ${rules.isMatched ? "text-emerald-600" : "text-gray-700"}`}>Phải trùng kí tự nhập mật khẩu</span>
                 </div>
             </div>
-            <button type="submit" className="mt-2 w-full rounded-lg bg-cyan-600 py-2.5 font-medium text-white transition hover:bg-cyan-700 cursor-pointer">
-              Đăng kí
+            {error && (<p className="text-sm text-red-600">{error}</p>)}
+            <button type="submit" disabled={loading}
+              className="mt-2 w-full rounded-lg bg-cyan-600 py-2.5 font-medium text-white transition hover:bg-cyan-700 disabled:opacity-60 cursor-pointer">
+              {loading ? "Đang đăng kí..." : "Đăng kí"}
             </button>
           </div>
         </form>
