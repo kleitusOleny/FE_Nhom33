@@ -1,5 +1,6 @@
 import {Outlet, useLocation} from "react-router-dom";
 import RightSideBar from "../component/RightSideBar.tsx";
+import LeftSideBar from "@/component/LeftSideBar.tsx";
 
 export default function Layout() {
     const location = useLocation();
@@ -10,12 +11,14 @@ export default function Layout() {
     return (
         <div className="h-screen w-full flex">
             <div className="w-80 h-full border-r border-gray-200 bg-gray-100">
-                <RightSideBar/>
+                <LeftSideBar/>
             </div>
             <div className="flex-1 h-full white">
                 <Outlet/>
             </div>
-            <div className="w-80 h-full border-l border-gray-300 bg-gray-100"></div>
+            <div className="w-80 h-full border-l border-gray-300 bg-gray-100">
+                <RightSideBar/>
+            </div>
         </div>
     )
 }
