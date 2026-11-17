@@ -4,6 +4,7 @@ import Layout from "./Layout.tsx";
 import Home from "../components/Home.tsx";
 import Login from "../components/authentication/Login.tsx";
 import Register from "../components/authentication/Register.tsx";
+import { MainChatUIComponent } from "@/components/chat";
 
 export const router = createBrowserRouter([
     {
@@ -26,7 +27,7 @@ export const router = createBrowserRouter([
             },
             {
                 path:"chat",
-                element: null,
+                element: <MainChatUIComponent />,
             },
             {
                 path: "error",
