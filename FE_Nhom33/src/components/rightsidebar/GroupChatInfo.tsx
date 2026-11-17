@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { BsPeople, BsChevronDown, BsChevronUp } from "react-icons/bs";
-import {QuickActions, MediaSection, FilesSection, PrivacySection} from "./SharedSections.tsx";
-
+import { MediaSection, FilesSection, PrivacySection} from "./SharedSections.tsx";
+// import {QuickActions, MediaSection, FilesSection, PrivacySection} from "./SharedSections.tsx";
 // interface Member {
 //     name: string;
 //     role: string;
@@ -18,7 +18,7 @@ import {QuickActions, MediaSection, FilesSection, PrivacySection} from "./Shared
 export default function GroupChatInfo({groupName = "Nhóm Đồ Án 33", members = [
                                               { name: "Bạn (Trưởng nhóm)", role: "Trưởng nhóm", isLeader: true },
                                               { name: "Nguyễn Văn A", role: "Thành viên", isLeader: false },
-                                          ], isActive = true, onAddMember}) {
+                                          ], isActive = true}) {
     const [openMembers, setOpenMembers] = useState(true);
 
     return (
@@ -38,7 +38,7 @@ export default function GroupChatInfo({groupName = "Nhóm Đồ Án 33", members
                         {isActive ? "Đang hoạt động" : "Không hoạt động"}
                     </span>
                 </div>
-                <QuickActions isGroup={true} onAddMember={onAddMember} />
+                {/*<QuickActions isGroup={true} onAddMember={onAddMember} />*/}
             </div>
 
             <div className="p-4 border-b border-gray-100">

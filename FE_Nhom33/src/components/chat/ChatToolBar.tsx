@@ -1,7 +1,13 @@
 import { Bold, Heading, Italic, Link, List, ListOrdered, TextQuote, Underline } from "lucide-react";
 import type { RefObject } from "react";
 
-export function ChatToolBar({ inputRef }: { inputRef: RefObject<HTMLTextAreaElement | null> }) {
+export function ChatToolBar({
+    inputRef,
+    onInsert,
+}: {
+    inputRef: RefObject<HTMLTextAreaElement | null>;
+    onInsert?: () => void;
+}) {
     const insertAtCursor = (element: HTMLTextAreaElement, start: string, end: string = "") => {
         const startIdx = element.selectionStart ?? 0;
         const endIdx = element.selectionEnd ?? 0;
@@ -12,6 +18,7 @@ export function ChatToolBar({ inputRef }: { inputRef: RefObject<HTMLTextAreaElem
         element.focus();
         const newPos = startIdx + start.length;
         element.setSelectionRange(newPos, newPos);
+        onInsert?.();
     };
 
     const handleFeature = (start: string, end: string = "") => {

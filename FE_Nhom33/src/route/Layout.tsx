@@ -1,6 +1,6 @@
 import {Outlet, useLocation} from "react-router-dom";
-import RightSideBar from "../component/RightSideBar.tsx";
-import LeftSideBar from "@/component/LeftSideBar.tsx";
+import RightSideBar from "../components/RightSideBar.tsx";
+import LeftSideBar from "@/components/LeftSideBar.tsx";
 
 export default function Layout() {
     const location = useLocation();
