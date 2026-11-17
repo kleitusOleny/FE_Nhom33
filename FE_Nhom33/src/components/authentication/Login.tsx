@@ -1,6 +1,7 @@
 import { useState, type SubmitEvent } from "react";
 import { useNavigate } from "react-router-dom";
 // import { saveAuthSession, sendChatEvent } from "../../services/wsClient";
+import {Link} from "react-router-dom";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -48,7 +49,7 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <form onSubmit={handleSubmit} className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-8 shadow-md">
         <div className="flex flex-col items-center justify-center gap-1 mb-6 select-none">
-          <h2 className="text-center text-2xl font-bold text-gray-800"> Chào mừng trở lại</h2>
+          <h2 className="text-center text-2xl font-bold text-gray-800">Chào mừng trở lại</h2>
           <h3 className="text-center text-1xl text-gray-800">Đăng nhập để tiếp tục cuộc trò chuyện</h3>
         </div>
         <div className="flex flex-col gap-4">
@@ -68,13 +69,18 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3.5 py-2 text-sm outline-none transition focus:border-blue-950 focus:ring-1 focus:ring-blue-100"/>
           </div>
-          {error && (<p className="text-sm text-red-600">{error}</p>)}
-          <button
-            type="submit"
+          {error && <p className="text-sm text-red-600">{error}</p>}
+          <button type="submit"
             disabled={loading}
             className="mt-2 w-full rounded-lg bg-blue-700 py-2.5 font-medium text-white transition hover:bg-blue-800 disabled:opacity-60 cursor-pointer">
             {loading ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
+          <div className="mt-2 text-center text-sm text-gray-600">
+            Chưa có tài khoản?{" "}
+            <Link to="/register" className="font-semibold text-blue-700 hover:text-blue-800 hover:underline cursor-pointer">
+              Đăng ký ngay
+            </Link>
+          </div>
         </div>
       </form>
     </div>

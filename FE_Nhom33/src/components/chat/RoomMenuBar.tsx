@@ -1,44 +1,73 @@
-import type { ReduxState } from "@/constants/ReduxState";
-import { ToastKeys } from "@/constants/ToastIcon";
-import { setToastMessage } from "@/redux/slices/socketSlice";
-import { getThumbnail } from "@/services/storageService";
-import type { ReceiveMsgGetChatRoomPayload } from "@/socket/types/WebsocketReceivePayload";
-import { generateInviteLink } from "@/utils/messageUtil";
-import { ChevronDown, ChevronLeft, ChevronUp, Cloud, Copy, ImageOff, Share, User } from "lucide-react";
+import {
+    ChevronDown,
+    ChevronLeft,
+    ChevronUp,
+    Cloud,
+    Copy,
+    ImageOff,
+    Share,
+    User,
+} from "lucide-react";
 import { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { setViewAttachmentIndex } from "@/redux/slices/chatSlice";
 
-export function RoomMenuBar({ setRoomMenuState }: { setRoomMenuState: (state: boolean) => void }) {
-    const dispatcher = useDispatch()
-    const currentTarget = useSelector((state: ReduxState) => state.chatState.currentChatTarget);
-    const currentUser = useSelector((state: ReduxState) => state.currentUser.user);
-    const listRoomAttachments = useSelector((state: ReduxState) => state.chatState.attachmentHistory)
-    const getRoomData = useSelector((state: ReduxState): ReceiveMsgGetChatRoomPayload | null => {
-        if (!currentTarget) return null;
-        if (currentTarget.type === 0) {
-            return null
-        } else {
-            const roomData = state.chatState.roomHistory[currentTarget.name];
-            return roomData
-        }
-    });
-    //Local state
-    const [memberState, setMemberState] = useState(false)
-    const [attachmentState, setAttachmentState] = useState(false)
+interface ChatTarget {
+    name: string;
+    type: 0 | 1;
+}
 
-    const roomAttachments = currentTarget ? listRoomAttachments[currentTarget.name] : []
+interface RoomMenuBarProps {
+    currentTarget: ChatTarget | null;
+    currentUsername: string;
+    members: string[];
+    attachments: string[];
+    onClose: () => void;
+    onViewAttachment: (index: number) => void;
+}
 
-    if (!currentTarget) return null
+export function RoomMenuBar({
+    currentTarget,
+    currentUsername,
+    members,
+    attachments,
+    onClose,
+    onViewAttachment,
+}: RoomMenuBarProps) {
+    const [memberState, setMemberState] = useState(true);
+    const [attachmentState, setAttachmentState] = useState(true);
+    const [copied, setCopied] = useState(false);
 
-    const inviteGroupLink = currentTarget && currentTarget.type === 1 ? generateInviteLink(currentTarget.name) : ""
+    if (!currentTarget) return null;
+
+    const isCurrentUser = currentTarget.name === currentUsername;
+    const title = isCurrentUser ? "My Document" : currentTarget.name;
+    const inviteGroupLink =
+        currentTarget.type === 1
+            ? `${window.location.origin}/g/${encodeURIComponent(currentTarget.name)}`
+            : "";
 
     const handleCopy = async () => {
         if (!inviteGroupLink) return;
+
         try {
             await navigator.clipboard.writeText(inviteGroupLink);
-            dispatcher(setToastMessage({ message: "Đã sao chép link mời", icon: ToastKeys.SUCCESS }))
-        } catch (err) {
+            setCopied(true);
+            window.setTimeout(() => setCopied(false), 2000);
+        } catch {
+            /* Clipboard không khả dụng */
+        }
+    };
+
+    const handleShare = async () => {
+        if (!inviteGroupLink) return;
+
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: currentTarget.name, url: inviteGroupLink });
+            } catch {
+                /* Người dùng hủy chia sẻ */
+            }
+        } else {
+            await handleCopy();
         }
     };
 
@@ -47,90 +76,99 @@ export function RoomMenuBar({ setRoomMenuState }: { setRoomMenuState: (state: bo
             {/* Header */}
             <div className="px-4 pt-4 lg:p-0 lg:hidden">
                 <ChevronLeft
-                    size={"1.75rem"}
+                    size="1.75rem"
                     className="cursor-pointer dark:text-white hover:text-neutral-400 dark:hover:text-neutral-500"
-                    onClick={() => setRoomMenuState(false)}
+                    onClick={onClose}
                 />
             </div>
+
             <div className="flex items-center justify-center flex-col gap-1 p-4">
-                <div className={`w-18 h-18 rounded-full border p-2 flex justify-center items-center ${currentTarget.name === currentUser?.username ? "bg-blue-400 " : "bg-gray-150 border-black "}`}>
-                    {currentTarget.name === currentUser?.username ?
-                        <Cloud size="2.5rem" className="text-white" fill={"white"} />
-                        : <User size="2.5rem" />
-                    }
+                <div
+                    className={`w-18 h-18 rounded-full border p-2 flex justify-center items-center ${isCurrentUser ? "bg-blue-400" : "bg-gray-150 border-black"}`}
+                >
+                    {isCurrentUser ? (
+                        <Cloud size="2.5rem" className="text-white" fill="white" />
+                    ) : (
+                        <User size="2.5rem" />
+                    )}
                 </div>
-                <p className="text-lg font-semibold">{currentTarget.name === currentUser?.username ? "My Document" : currentTarget.name}</p>
+                <p className="text-lg font-semibold">{title}</p>
             </div>
-            {/* Member */}
+
             <div className="px-2 overflow-y-auto">
-                {getRoomData && currentTarget.type === 1 ?
+                {/* Members */}
+                {currentTarget.type === 1 && members.length > 0 && (
                     <div className="my-1">
                         <div
                             className="cursor-pointer p-2 rounded-lg flex justify-between hover:bg-neutral-100 active:bg-neutral-200"
-                            onClick={() => setMemberState(!memberState)}
+                            onClick={() => setMemberState((state) => !state)}
                         >
                             <h5 className="font-semibold">Thành viên trong nhóm</h5>
                             {memberState ? <ChevronUp /> : <ChevronDown />}
                         </div>
-                        {
-                            memberState &&
+                        {memberState && (
                             <div className="flex flex-col overflow-y-auto h-40 border-b">
-                                {getRoomData.userList && getRoomData.userList?.map(user => (
-                                    <div className="rounded cursor-pointer flex gap-2 items-center hover:bg-neutral-200 p-1">
+                                {members.map((member) => (
+                                    <div
+                                        key={member}
+                                        className="rounded cursor-pointer flex gap-2 items-center hover:bg-neutral-200 p-1"
+                                    >
                                         <div className="my-1 rounded-full border p-2 border-black bg-gray-150 flex justify-center items-center bg-white shrink-0">
-                                            <User size={"1rem"} />
+                                            <User size="1rem" />
                                         </div>
                                         <span>
-                                            {`${user.name} ${currentUser?.username === user.name ? "(Bạn)" : ""}`}
+                                            {`${member} ${currentUsername === member ? "(Bạn)" : ""}`}
                                         </span>
                                     </div>
                                 ))}
                             </div>
-                        }
+                        )}
                     </div>
-                    : <></>
-                }
+                )}
+
+                {/* Attachments */}
                 <div className="my-1">
                     <div
                         className="cursor-pointer p-2 rounded-lg flex justify-between hover:bg-neutral-100 active:bg-neutral-200"
-                        onClick={() => setAttachmentState(!attachmentState)}
+                        onClick={() => setAttachmentState((state) => !state)}
                     >
                         <h5 className="font-semibold">Ảnh & Video</h5>
                         {attachmentState ? <ChevronUp /> : <ChevronDown />}
                     </div>
-                    {
-                        attachmentState &&
+                    {attachmentState && (
                         <div className="mt-2">
-                            {
-                                roomAttachments.length === 0
-                                    ? <div className="gap-3">
-                                        <div className="flex flex-col items-center justify-center gap-2 h-40">
-                                            <ImageOff size={"2rem"} className="text-neutral-500" />
-                                            <p className="text-center text-neutral-500 text-sm">Không có ảnh & video được gửi</p>
+                            {attachments.length === 0 ? (
+                                <div className="gap-3">
+                                    <div className="flex flex-col items-center justify-center gap-2 h-40">
+                                        <ImageOff size="2rem" className="text-neutral-500" />
+                                        <p className="text-center text-neutral-500 text-sm">
+                                            Không có ảnh & video được gửi
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-4 gap-1 w-full max-h-47 overflow-y-auto">
+                                    {attachments.map((attachment, index) => (
+                                        <div
+                                            key={`${attachment.slice(0, 24)}-${index}`}
+                                            className="w-full aspect-square overflow-hidden rounded-lg"
+                                        >
+                                            <img
+                                                className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                                                src={attachment}
+                                                alt={`attachment-${index}`}
+                                                onClick={() => onViewAttachment(index)}
+                                            />
                                         </div>
-                                    </div>
-                                    : <div className="grid grid-cols-4 gap-1 w-full max-h-47 overflow-y-auto">
-                                        {roomAttachments.map((attachment, index) => (
-                                            <div key={index} className="w-full aspect-square overflow-hidden rounded-lg">
-                                                <img
-                                                    className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
-                                                    src={getThumbnail(attachment)}
-                                                    alt={`attachment-${index}`}
-                                                    onClick={() => {
-                                                        dispatcher(setViewAttachmentIndex({
-                                                            state: true,
-                                                            index: index
-                                                        }))
-                                                    }}
-                                                />
-                                            </div>
-                                        ))}
-                                    </div>
-                            }
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                    }
+                    )}
                 </div>
-                {currentTarget.type === 1 &&
+
+                {/* Invite link */}
+                {currentTarget.type === 1 && (
                     <div className="my-1 p-2">
                         <h5 className="font-semibold">Link tham gia nhóm</h5>
                         <div className="flex flex-1 truncate justify-between items-center gap-4">
@@ -144,22 +182,24 @@ export function RoomMenuBar({ setRoomMenuState }: { setRoomMenuState: (state: bo
                             <div className="flex gap-2 justify-end shrink-0">
                                 <div
                                     className="cursor-pointer rounded-full bg-gray-200 hover:bg-gray-300 active:bg-gray-400 w-10 h-10 flex justify-center items-center"
-                                    title="Sao chép"
+                                    title={copied ? "Đã sao chép" : "Sao chép"}
                                     onClick={handleCopy}
                                 >
-                                    <Copy size={'1.25rem'} />
+                                    <Copy size="1.25rem" />
                                 </div>
                                 <div
                                     className="cursor-pointer rounded-full bg-gray-200 hover:bg-gray-300 active:bg-gray-400 w-10 h-10 flex justify-center items-center"
                                     title="Chia sẻ"
+                                    onClick={handleShare}
                                 >
-                                    <Share size={'1.25rem'} />
+                                    <Share size="1.25rem" />
                                 </div>
                             </div>
                         </div>
+                        {copied && <p className="text-xs text-green-600 mt-1">Đã sao chép link mời</p>}
                     </div>
-                }
+                )}
             </div>
         </div>
-    )
+    );
 }
