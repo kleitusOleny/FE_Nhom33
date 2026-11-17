@@ -1,5 +1,6 @@
 import { useEffect, useState, type SubmitEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Lock, User } from "lucide-react";
 import { WebsocketInstance } from "@/socket/WebsocketInstance";
 import { WebSocketEvent } from "@/socket/types/WebSoketMessage";
 
@@ -51,7 +52,10 @@ export default function Login() {
         </div>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-700 select-none">Tên đăng nhập</label>
+            <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 select-none">
+              <User className="h-4 w-4 text-gray-500" />
+              Tên đăng nhập
+            </label>
             <input type="text"
               placeholder="VD: nguyenan"
               value={username}
@@ -59,7 +63,10 @@ export default function Login() {
               className="w-full rounded-lg border border-gray-300 px-3.5 py-2 text-sm outline-none transition focus:border-blue-950 focus:ring-1 focus:ring-blue-100"/>
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-700 select-none">Nhập mật khẩu</label>
+            <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 select-none">
+              <Lock className="h-4 w-4 text-gray-500" />
+              Nhập mật khẩu
+            </label>
             <input type="password"
               placeholder="VD: nguyenan@2"
               value={password}
@@ -67,16 +74,18 @@ export default function Login() {
               className="w-full rounded-lg border border-gray-300 px-3.5 py-2 text-sm outline-none transition focus:border-blue-950 focus:ring-1 focus:ring-blue-100"/>
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
-          <button type="submit"
-            disabled={loading}
-            className="mt-2 w-full rounded-lg bg-blue-700 py-2.5 font-medium text-white transition hover:bg-blue-800 disabled:opacity-60 cursor-pointer">
-            {loading ? "Đang đăng nhập..." : "Đăng nhập"}
-          </button>
-          <div className="mt-2 text-center text-sm text-gray-600">
-            Chưa có tài khoản?{" "}
-            <Link to="/register" className="font-semibold text-blue-700 hover:text-blue-800 hover:underline cursor-pointer">
-              Đăng ký ngay
-            </Link>
+          <div className="flex flex-col gap-0.5">
+            <button type="submit"
+              disabled={loading}
+              className="mt-2 w-full rounded-lg bg-blue-700 py-2.5 font-medium text-white transition hover:bg-blue-800 disabled:opacity-60 cursor-pointer">
+              {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+            </button>
+            <div className="mt-2 text-center text-sm text-gray-600">
+              Chưa có tài khoản?{" "}
+              <Link to="/register" className="font-semibold text-blue-700 hover:text-blue-800 hover:underline cursor-pointer">
+                Đăng ký ngay
+              </Link>
+            </div>
           </div>
         </div>
       </form>

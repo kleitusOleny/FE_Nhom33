@@ -1,5 +1,6 @@
 import { useEffect, useState, type SubmitEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { KeyRound, Lock, User } from "lucide-react";
 import { checkPasswordCriteria, checkUsernameCriteria } from "./Verification";
 import { WebsocketInstance } from "@/socket/WebsocketInstance";
 import { WebSocketEvent } from "@/socket/types/WebSoketMessage";
@@ -52,9 +53,12 @@ export default function Register() {
             <h2 className="text-center text-2xl font-bold text-gray-800">Đăng kí tài khoản</h2>
             <h3 className="text-center text-1xl text-gray-800">Cùng tham gia trò chuyện với mọi người</h3>
           </div>
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-0.5">
             <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-gray-700 select-none">Tên đăng nhập</label>
+                <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 select-none">
+                  <User className="h-4 w-4 text-gray-500" />
+                  Tên đăng nhập
+                </label>
                 <input type="text" 
                 placeholder="VD: nguyenan_2" 
                 value={username} 
@@ -67,9 +71,10 @@ export default function Register() {
                 className="mr-2 leading-tight"/>
               <span className={`text-sm leading-none transition-colors ${rulesUsername.noSpecialChar ? "text-emerald-600" : "text-gray-700"}`}>Tên người dùng chỉ bao gồm chữ cái, số và dấu gạch dưới</span>
             </div>
-            <div className="flex flex-col gap-1.5 mt-2">
-                <div>
-                    <label className="text-sm font-medium text-gray-700 select-none">Nhập mật khẩu</label>
+            <div className="flex flex-col gap-0.5 mt-4">
+                <div className="flex flex-col gap-1.5">
+                    <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 select-none">
+                      <Lock className="h-4 w-4 text-gray-500"/>Nhập mật khẩu</label>
                     <input type="password" 
                     placeholder="VD: Nguyenan@2" 
                     value={password}
@@ -103,9 +108,10 @@ export default function Register() {
                     </div>
                 </div>
             </div>
-            <div className="flex flex-col gap-1.5 mt-2">
-                <div>
-                    <label className="text-sm font-medium text-gray-700 select-none">Nhập lại mật khẩu</label>
+            <div className="flex flex-col gap-0.5 mt-4">
+                <div className="flex flex-col gap-1.5">
+                    <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 select-none">
+                      <KeyRound className="h-4 w-4 text-gray-500"/>Nhập lại mật khẩu</label>
                     <input type="password" 
                     placeholder="VD: Nguyenan@2"
                     value={rePassword}
@@ -121,7 +127,7 @@ export default function Register() {
             </div>
             {error && (<p className="text-sm text-red-600">{error}</p>)}
             <button type="submit" disabled={loading}
-              className="mt-2 w-full rounded-lg bg-cyan-600 py-2.5 font-medium text-white transition hover:bg-cyan-700 disabled:opacity-60 cursor-pointer">
+              className="mt-5 w-full rounded-lg bg-cyan-600 py-2.5 font-medium text-white transition hover:bg-cyan-700 disabled:opacity-60 cursor-pointer">
               {loading ? "Đang đăng kí..." : "Đăng kí"}
             </button>
             <div className="mt-2 text-center text-sm text-gray-600">
