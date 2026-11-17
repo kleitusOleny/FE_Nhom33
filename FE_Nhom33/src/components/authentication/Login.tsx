@@ -1,7 +1,7 @@
-import { useState, type SubmitEvent } from "react";
-import { useNavigate } from "react-router-dom";
-// import { saveAuthSession, sendChatEvent } from "../../services/wsClient";
-import {Link} from "react-router-dom";
+import { useEffect, useState, type SubmitEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { WebsocketInstance } from "@/socket/WebsocketInstance";
+import { WebSocketEvent } from "@/socket/types/WebSoketMessage";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -10,7 +10,22 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
+  useEffect(() => {
+    const ws = WebsocketInstance.getInstance();
+    const unsubscribe = ws.subscribe(WebSocketEvent.LOGIN, (res) => {
+      setLoading(false);
+      if (res.status === "success") {
+        localStorage.setItem("re_login_code", res.data.RE_LOGIN_CODE);
+        localStorage.setItem("username", username.trim());
+        navigate("/chat");
+      } else {
+        setError("Đăng nhập thất bại, sai tên đăng nhập hoặc mật khẩu");
+      }
+    });
+    return unsubscribe;
+  }, [navigate, username]);
+
+  function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
 
@@ -21,28 +36,10 @@ export default function Login() {
     }
 
     setLoading(true);
-    try {
-      // giả lập ws để test validate
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      navigate("/chat");
-
-      // const res = await sendChatEvent<{ RE_LOGIN_CODE: string }>("LOGIN", {
-      //   user: trimmedUser,
-      //   pass: password,
-      // });
-      //
-      // if (res.status === "success" && res.data?.RE_LOGIN_CODE) {
-      //   saveAuthSession(trimmedUser, res.data.RE_LOGIN_CODE);
-      //   navigate("/chat");
-      //   return;
-      // }
-      //
-      // setError(res.mes || "Đăng nhập thất bại");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Lỗi kết nối máy chủ");
-    } finally {
-      setLoading(false);
-    }
+    WebsocketInstance.getInstance().send(WebSocketEvent.LOGIN, {
+      user: trimmedUser,
+      pass: password,
+    });
   }
 
   return (

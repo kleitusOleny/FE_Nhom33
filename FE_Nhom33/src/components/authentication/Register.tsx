@@ -1,7 +1,8 @@
-import { useState, type SubmitEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState, type SubmitEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { checkPasswordCriteria, checkUsernameCriteria } from "./Verification";
-// import { sendChatEvent } from "../../services/wsClient";
+import { WebsocketInstance } from "@/socket/WebsocketInstance";
+import { WebSocketEvent } from "@/socket/types/WebSoketMessage";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -16,7 +17,20 @@ export default function Register() {
   const isUsernameValid = rulesUsername.noSpecialChar;
   const isPasswordValid = rules.hasMinLength && rules.hasUpperLower && rules.hasSpecialChar && rules.hasNumber && rules.isMatched && rules.noSpaces;
 
-  async function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
+  useEffect(() => {
+    const ws = WebsocketInstance.getInstance();
+    const unsubscribe = ws.subscribe(WebSocketEvent.REGISTER, (res) => {
+      setLoading(false);
+      if (res.status === "success") {
+        navigate("/login");
+      } else {
+        setError(res.mes);
+      }
+    });
+    return unsubscribe;
+  }, [navigate]);
+
+  function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
     if (!isPasswordValid || !isUsernameValid) {
@@ -25,27 +39,10 @@ export default function Register() {
     }
 
     setLoading(true);
-    try {
-      // giả lập ws để test validate
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      navigate("/login");
-
-      // const res = await sendChatEvent<string>("REGISTER", {
-      //   user: username,
-      //   pass: password,
-      // });
-      //
-      // if (res.status === "success") {
-      //   navigate("/login");
-      //   return;
-      // }
-      //
-      // setError(res.mes || "Đăng ký thất bại");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Lỗi kết nối máy chủ");
-    } finally {
-      setLoading(false);
-    }
+    WebsocketInstance.getInstance().send(WebSocketEvent.REGISTER, {
+      user: username.trim(),
+      pass: password,
+    });
   }
 
     return (
@@ -127,6 +124,12 @@ export default function Register() {
               className="mt-2 w-full rounded-lg bg-cyan-600 py-2.5 font-medium text-white transition hover:bg-cyan-700 disabled:opacity-60 cursor-pointer">
               {loading ? "Đang đăng kí..." : "Đăng kí"}
             </button>
+            <div className="mt-2 text-center text-sm text-gray-600">
+              Đã có tài khoản?{" "}
+              <Link to="/login" className="font-semibold text-cyan-600 hover:text-cyan-700 hover:underline cursor-pointer">
+                Đăng nhập ngay
+              </Link>
+            </div>
           </div>
         </form>
       </div>
