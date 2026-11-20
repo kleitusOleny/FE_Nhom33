@@ -7,8 +7,7 @@ import { ChatMenuBar } from "./ChatMenuBar";
 import { ChatSideBar } from "./ChatSideBar";
 import { RoomMenuBar } from "./RoomMenuBar";
 import type { LayoutOutletContext } from "@/route/Layout";
-import { WebsocketInstance } from "@/socket/WebsocketInstance";
-import { WebSocketEvent } from "@/socket/types/WebSoketMessage";
+import { chatSocketService } from "@/services/chatSocketService";
 import { addIncomingMessage } from "@/store/slice/chatSlice";
 import type { AppDispatch, RootState } from "@/store/store";
 
@@ -349,11 +348,7 @@ export function ChatBoxComponent() {
         if (!currentTarget) return;
 
         const targetType = currentTarget.type;
-        WebsocketInstance.getInstance().send(WebSocketEvent.SEND_CHAT_TO_PEOPLE, {
-            type: targetType === 1 ? "room" : "people",
-            to: currentTarget.name,
-            mes: rawMessage,
-        });
+        chatSocketService.sendMessage(currentTarget, rawMessage);
 
         dispatch(
             addIncomingMessage({
