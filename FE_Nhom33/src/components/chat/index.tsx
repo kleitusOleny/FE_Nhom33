@@ -1,9 +1,16 @@
 import { useState } from "react";
+import { useOutletContext } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { ChatInterface } from "./ChatInterface";
 import { ChatMenuBar } from "./ChatMenuBar";
 import { ChatSideBar } from "./ChatSideBar";
 import { RoomMenuBar } from "./RoomMenuBar";
+import type { LayoutOutletContext } from "@/route/Layout";
+import { WebsocketInstance } from "@/socket/WebsocketInstance";
+import { WebSocketEvent } from "@/socket/types/WebSoketMessage";
+import { addIncomingMessage } from "@/store/slice/chatSlice";
+import type { AppDispatch, RootState } from "@/store/store";
 
 interface ChatTarget {
     name: string;
@@ -325,5 +332,61 @@ export function MainChatUIComponent() {
                 </div>
             )}
         </div>
+    );
+}
+
+export function ChatBoxComponent() {
+    const dispatch = useDispatch<AppDispatch>();
+    const outletContext = useOutletContext<LayoutOutletContext | undefined>();
+    const { currentTarget, peopleHistory, roomHistory } = useSelector(
+        (state: RootState) => state.chat
+    );
+    const authUsername = useSelector((state: RootState) => state.auth.username);
+    const currentUsername =
+        authUsername || localStorage.getItem("username") || "";
+
+    const handleSend = (rawMessage: string) => {
+        if (!currentTarget) return;
+
+        const targetType = currentTarget.type;
+        WebsocketInstance.getInstance().send(WebSocketEvent.SEND_CHAT_TO_PEOPLE, {
+            type: targetType === 1 ? "room" : "people",
+            to: currentTarget.name,
+            mes: rawMessage,
+        });
+
+        dispatch(
+            addIncomingMessage({
+                targetName: currentTarget.name,
+                type: targetType,
+                message: {
+                    id: Date.now(),
+                    name: currentUsername,
+                    to: currentTarget.name,
+                    type: targetType,
+                    mes: rawMessage,
+                    createAt: new Date().toISOString(),
+                },
+            })
+        );
+    };
+
+    const currentMessages = currentTarget
+        ? currentTarget.type === 1
+            ? roomHistory[currentTarget.name]?.messages ?? []
+            : peopleHistory[currentTarget.name] ?? []
+        : [];
+
+    return (
+        <ChatInterface
+            key={currentTarget ? `${currentTarget.type}-${currentTarget.name}` : "empty"}
+            currentTarget={currentTarget}
+            messages={currentMessages}
+            currentUsername={currentUsername}
+            onSend={handleSend}
+            closeTabState={outletContext?.showRightSidebar ?? true}
+            onCloseTab={() => outletContext?.toggleRightSidebar()}
+            onOpenMenu={() => {}}
+        />
     );
 }
