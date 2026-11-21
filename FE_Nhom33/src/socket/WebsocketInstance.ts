@@ -35,6 +35,11 @@ export class WebsocketInstance {
         this.socket.onopen = () => {
             console.log("Connected to server successfully!")
 
+            while (this.queue.length > 0) {
+                const msg = this.queue.shift()
+                if (msg) this.socket?.send(msg)
+            }
+
             if (this.onInitConnection) {
                 this.onInitConnection()
             }

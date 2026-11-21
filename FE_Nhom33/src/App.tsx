@@ -1,6 +1,6 @@
 import { RouterProvider } from "react-router-dom";
 import { useEffect } from "react";
-import router from "./routes/index.tsx";
+import { router } from "./route/Router";
 
 function App() {
     useEffect(() => {
