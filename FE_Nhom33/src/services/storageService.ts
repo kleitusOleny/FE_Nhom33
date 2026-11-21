@@ -140,10 +140,6 @@ const prepareUploadFile = async (file: File, resourceType: CloudinaryResourceTyp
     }
 }
 
-/**
- * Upload 1 file lên Cloudinary thông qua signature do backend cấp.
- * Hàm này chỉ nên được gọi khi đã đăng nhập.
- */
 export async function uploadAttachment(
     folder: string,
     file: File,
@@ -198,10 +194,6 @@ export async function uploadAttachment(
     }
 }
 
-/**
- * Upload nhiều file. File không hợp lệ bị bỏ qua và trả về trong `errors`.
- * Progress là trung bình cộng tiến độ của tất cả file.
- */
 export async function uploadMultipleAttachments(
     folder: string,
     files: File[],
@@ -355,10 +347,6 @@ const triggerDownload = (href: string, fileName: string) => {
     document.body.removeChild(link)
 }
 
-/**
- * Tải file về máy. Với Cloudinary dùng flag `fl_attachment` để server trả
- * Content-Disposition: attachment (tránh phải fetch cả video lớn vào RAM).
- */
 export const downloadAttachment = async (url: string, fileName?: string): Promise<void> => {
     const name = fileName || getFileNameFromUrl(url)
 
