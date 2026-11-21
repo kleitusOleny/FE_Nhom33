@@ -26,7 +26,7 @@ export default function Layout() {
 
   return (
     <div className="h-screen w-full flex overflow-hidden">
-      <div className="w-80 h-full border-r border-gray-200 bg-gray-100 shrink-0">
+      <div className="w-[384px] h-full border-r border-gray-200 bg-gray-100 shrink-0">
         <LeftSideBar />
       </div>
       <div className="flex-1 h-full min-w-0 bg-white">
