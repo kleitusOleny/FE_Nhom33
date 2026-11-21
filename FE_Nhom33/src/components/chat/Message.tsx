@@ -1,10 +1,6 @@
 import { User } from "lucide-react";
-
-interface MessageContent {
-    type: "chat" | "sticker" | "attachment";
-    content: string;
-    attachment: string[];
-}
+import { AttachmentBubble } from "./AttachmentBubble";
+import type { MessageContent, MessagePayloadType } from "@/types/Message";
 
 interface MessageProps {
     rawMessage: string;
@@ -19,13 +15,17 @@ const extractMessageContent = (rawMessage: string): MessageContent => {
     }
 
     try {
-        const parsed = JSON.parse(rawMessage);
-        if (typeof parsed === "object" && parsed !== null) {
-            if (parsed.type || parsed.content || parsed.attachment) {
+        const parsed = JSON.parse(rawMessage) as Partial<MessageContent> | null;
+        if (parsed && typeof parsed === "object") {
+            const type: MessagePayloadType =
+                parsed.type === "sticker" || parsed.type === "attachment" ? parsed.type : "chat";
+            const attachment = Array.isArray(parsed.attachment) ? parsed.attachment : [];
+
+            if (parsed.type || parsed.content || attachment.length > 0) {
                 return {
-                    type: parsed.type ?? "chat",
-                    content: parsed.content ?? "",
-                    attachment: parsed.attachment ?? [],
+                    type,
+                    content: typeof parsed.content === "string" ? parsed.content : "",
+                    attachment,
                 };
             }
         }
@@ -97,17 +97,15 @@ export function Message({ rawMessage, isOwner, username, time }: MessageProps) {
                             </div>
                         )}
 
-                        {contentObj.type === "attachment" && (
+                        {contentObj.attachment.length > 0 && (
                             <div className={`flex flex-col ${isOwner ? "items-end" : "items-start"} gap-1 my-1`}>
-                                {contentObj.attachment.map((url, index) => (
-                                    <img
-                                        key={`${url.slice(0, 24)}-${index}`}
-                                        src={url}
-                                        alt="Attachment"
-                                        className="max-w-full rounded-lg"
+                                {contentObj.attachment.map((attachment, index) => (
+                                    <AttachmentBubble
+                                        key={`${typeof attachment === "string" ? attachment : attachment.url}-${index}`}
+                                        value={attachment}
                                     />
                                 ))}
-                                {(contentObj.content || formattedTime) && (
+                                {contentObj.type === "attachment" && (contentObj.content || formattedTime) && (
                                     <div className={`w-fit mt-1 p-2 px-3 rounded-2xl shadow-sm ${isOwner ? "bg-indigo-600 text-white" : "bg-white"}`}>
                                         {contentObj.content}
                                         {formattedTime && (

@@ -10,6 +10,7 @@ import type { LayoutOutletContext } from "@/route/Layout";
 import { chatSocketService } from "@/services/chatSocketService";
 import { addIncomingMessage } from "@/store/slice/chatSlice";
 import type { AppDispatch, RootState } from "@/store/store";
+import type { AttachmentValue } from "@/types/Message";
 
 interface ChatTarget {
     name: string;
@@ -33,7 +34,7 @@ const minutesAgo = (minutes: number) =>
 const makePayload = (
     type: "chat" | "sticker" | "attachment",
     content: string,
-    attachment: string[] = []
+    attachment: AttachmentValue[] = []
 ) => JSON.stringify({ type, content, attachment });
 
 const svgImage = (label: string, color: string) =>
