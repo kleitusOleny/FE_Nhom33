@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import {
+    FileText,
     Image,
+    Loader2,
     Menu,
     PanelRight,
     SendHorizonal,
@@ -14,6 +16,9 @@ import { Message } from "./Message";
 import { ChatToolBar } from "./ChatToolBar";
 import StickerPicker from "./StickerPicker";
 import EmojiCustomPicker from "./EmojiCustomPicker";
+import { useUpload } from "@/hooks/useUpload";
+import { validateAttachment } from "@/services/storageService";
+import type { AttachmentValue } from "@/types/Message";
 
 interface ChatTarget {
     name: string;
@@ -46,7 +51,7 @@ interface ChatInterfaceProps {
 const makePayload = (
     type: "chat" | "sticker" | "attachment",
     content: string,
-    attachment: string[] = []
+    attachment: AttachmentValue[] = []
 ) => JSON.stringify({ type, content, attachment });
 
 export function ChatInterface({
@@ -66,6 +71,8 @@ export function ChatInterface({
     const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
     const [openStickerPicker, setOpenStickerPicker] = useState(false);
     const [openEmojiPicker, setOpenEmojiPicker] = useState(false);
+    const [uploadError, setUploadError] = useState("");
+    const { progress, isUploading, startMultipleUpload } = useUpload();
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -100,10 +107,22 @@ export function ChatInterface({
         const files = Array.from(event.target.files ?? []);
         if (files.length === 0) return;
 
-        setPendingFiles((prev) => [
-            ...prev,
-            ...files.map((file) => ({ file, url: URL.createObjectURL(file) })),
-        ]);
+        const accepted: PendingFile[] = [];
+        const errors: string[] = [];
+
+        files.forEach((file) => {
+            const validation = validateAttachment(file);
+            if (validation.ok) {
+                accepted.push({ file, url: URL.createObjectURL(file) });
+            } else {
+                errors.push(`${file.name}: ${validation.message}`);
+            }
+        });
+
+        if (accepted.length > 0) {
+            setPendingFiles((prev) => [...prev, ...accepted]);
+        }
+        setUploadError(errors.join("\n"));
         event.target.value = "";
     };
 
@@ -115,11 +134,34 @@ export function ChatInterface({
         });
     };
 
-    const handleSend = () => {
+    const handleSend = async () => {
+        if (isUploading) return;
+
         const text = textareaRef.current?.value.trim() ?? "";
         if (!text && pendingFiles.length === 0) return;
 
-        const attachments = pendingFiles.map((item) => item.url);
+        setUploadError("");
+        let attachments: AttachmentValue[] = [];
+
+        if (pendingFiles.length > 0) {
+            const result = await startMultipleUpload(
+                "chat",
+                pendingFiles.map((item) => item.file)
+            );
+
+            if (!result.result) {
+                setUploadError(result.message);
+                return;
+            }
+
+            attachments = result.attachments;
+            if (result.errors.length > 0) {
+                setUploadError(result.message);
+            }
+
+            pendingFiles.forEach((item) => URL.revokeObjectURL(item.url));
+        }
+
         const type = attachments.length > 0 ? "attachment" : "chat";
         onSend(makePayload(type, text, attachments));
 
@@ -202,6 +244,25 @@ export function ChatInterface({
             <div className="mb-16 lg:mb-0">
                 <ChatToolBar inputRef={textareaRef} onInsert={handleInput} />
                 <div className="flex flex-col p-1 pt-0">
+                    {(isUploading || uploadError) && (
+                        <div className="px-2 pb-1 text-xs">
+                            {isUploading ? (
+                                <div className="flex items-center gap-2 text-indigo-600">
+                                    <Loader2 size={14} className="animate-spin" />
+                                    <span className="shrink-0">Đang tải lên {progress}%</span>
+                                    <div className="h-1 flex-1 overflow-hidden rounded bg-gray-200">
+                                        <div
+                                            className="h-full rounded bg-indigo-500 transition-all"
+                                            style={{ width: `${progress}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            ) : (
+                                <p className="whitespace-pre-line text-red-500">{uploadError}</p>
+                            )}
+                        </div>
+                    )}
+
                     {pendingFiles.length > 0 && (
                         <div className="flex gap-2 mb-2 overflow-x-auto pb-2">
                             {pendingFiles.map((item, index) => (
@@ -212,7 +273,9 @@ export function ChatInterface({
                                     <button
                                         type="button"
                                         onClick={() => removeFile(index)}
-                                        className="absolute top-0 right-0 bg-red-500 text-white p-0.5 rounded-bl opacity-80 hover:opacity-100 z-10"
+                                        disabled={isUploading}
+                                        title={isUploading ? "Đang tải lên, không thể xoá" : "Xoá tệp"}
+                                        className={`absolute top-0 right-0 bg-red-500 text-white p-0.5 rounded-bl z-10 ${isUploading ? "cursor-not-allowed opacity-40" : "opacity-80 hover:opacity-100"}`}
                                     >
                                         <X size={12} />
                                     </button>
@@ -222,9 +285,18 @@ export function ChatInterface({
                                             alt="preview"
                                             className="w-full h-full object-cover"
                                         />
+                                    ) : item.file.type.startsWith("video/") ? (
+                                        <video
+                                            src={item.url}
+                                            muted
+                                            className="w-full h-full object-cover"
+                                        />
                                     ) : (
-                                        <div className="flex items-center justify-center h-full text-[10px] text-center p-1 break-all bg-white">
-                                            {item.file.name}
+                                        <div className="flex flex-col items-center justify-center h-full gap-1 text-[10px] text-center p-1 bg-white">
+                                            <FileText size={18} className="shrink-0 text-indigo-500" />
+                                            <span className="w-full truncate" title={item.file.name}>
+                                                {item.file.name}
+                                            </span>
                                         </div>
                                     )}
                                 </div>
@@ -238,7 +310,6 @@ export function ChatInterface({
                         className="hidden"
                         ref={fileInputRef}
                         onChange={handleFileSelect}
-                        accept="image/*,video/*"
                     />
 
                     <div className="min-h-4 flex p-2 pt-0">
@@ -254,8 +325,10 @@ export function ChatInterface({
                             <div className="flex items-start justify-end gap-3 pt-2">
                                 <Image
                                     size="1.5rem"
-                                    className="cursor-pointer text-gray-700 dark:text-white hover:text-neutral-500 dark:hover:text-neutral-400"
-                                    onClick={() => fileInputRef.current?.click()}
+                                    className={`text-gray-700 dark:text-white hover:text-neutral-500 dark:hover:text-neutral-400 ${isUploading ? "cursor-not-allowed opacity-40" : "cursor-pointer"}`}
+                                    onClick={() => {
+                                        if (!isUploading) fileInputRef.current?.click();
+                                    }}
                                 />
                                 <Sticker
                                     size="1.5rem"
@@ -286,14 +359,18 @@ export function ChatInterface({
                             <div className="pt-0.5">
                                 <button
                                     type="button"
-                                    onClick={handleSend}
-                                    disabled={!hasContent && pendingFiles.length === 0}
-                                    className={`cursor-pointer rounded-full p-2 transition-colors ${!hasContent && pendingFiles.length === 0
+                                    onClick={() => { void handleSend(); }}
+                                    disabled={isUploading || (!hasContent && pendingFiles.length === 0)}
+                                    className={`cursor-pointer rounded-full p-2 transition-colors ${isUploading || (!hasContent && pendingFiles.length === 0)
                                         ? "bg-gray-300 cursor-not-allowed"
                                         : "bg-indigo-500 hover:bg-indigo-400 text-neutral-100"
                                         }`}
                                 >
-                                    <SendHorizonal size="1.25rem" />
+                                    {isUploading ? (
+                                        <Loader2 size="1.25rem" className="animate-spin" />
+                                    ) : (
+                                        <SendHorizonal size="1.25rem" />
+                                    )}
                                 </button>
                             </div>
                         </div>
