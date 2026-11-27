@@ -325,14 +325,14 @@ export function ChatInterface({
                             <div className="flex items-start justify-end gap-3 pt-2">
                                 <Image
                                     size="1.5rem"
-                                    className={`text-gray-700 dark:text-white hover:text-neutral-500 dark:hover:text-neutral-400 ${isUploading ? "cursor-not-allowed opacity-40" : "cursor-pointer"}`}
+                                    className={`text-gray-600 hover:text-blue-600 transition-colors ${isUploading ? "cursor-not-allowed opacity-40" : "cursor-pointer"}`}
                                     onClick={() => {
                                         if (!isUploading) fileInputRef.current?.click();
                                     }}
                                 />
                                 <Sticker
                                     size="1.5rem"
-                                    className="cursor-pointer text-gray-700 dark:text-white hover:text-neutral-500 dark:hover:text-neutral-400"
+                                    className="cursor-pointer text-gray-600 hover:text-blue-600 transition-colors"
                                     onClick={() => setOpenStickerPicker((open) => !open)}
                                 />
                                 {openStickerPicker && (
@@ -346,7 +346,7 @@ export function ChatInterface({
                                 )}
                                 <Smile
                                     size="1.5rem"
-                                    className="cursor-pointer text-gray-700 dark:text-white hover:text-neutral-500 dark:hover:text-neutral-400"
+                                    className="cursor-pointer text-gray-600 hover:text-blue-600 transition-colors"
                                     onClick={() => setOpenEmojiPicker((open) => !open)}
                                 />
                                 {openEmojiPicker && (
@@ -361,9 +361,9 @@ export function ChatInterface({
                                     type="button"
                                     onClick={() => { void handleSend(); }}
                                     disabled={isUploading || (!hasContent && pendingFiles.length === 0)}
-                                    className={`cursor-pointer rounded-full p-2 transition-colors ${isUploading || (!hasContent && pendingFiles.length === 0)
-                                        ? "bg-gray-300 cursor-not-allowed"
-                                        : "bg-indigo-500 hover:bg-indigo-400 text-neutral-100"
+                                    className={`rounded-full p-2 transition-colors text-white ${isUploading || (!hasContent && pendingFiles.length === 0)
+                                        ? "bg-blue-300 cursor-not-allowed"
+                                        : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
                                         }`}
                                 >
                                     {isUploading ? (

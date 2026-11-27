@@ -69,22 +69,22 @@ export function ChatToolBar({
     ];
 
     return (
-        <div className="bg-white h-12 flex items-center px-2 py-2 border-t">
+        <div className="bg-white h-12 flex items-center px-2 py-2 border-t border-gray-200">
             {decorationFeature.map((ele, index) => (
                 <div title={ele.name} key={index}>
                     <ele.Icon
-                        className="rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 cursor-pointer p-1.5"
+                        className="rounded text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer p-1.5"
                         size={"2rem"}
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={ele.onClick}
                     />
                 </div>
             ))}
-            <div className="w-px mx-1 h-full bg-neutral-400"></div>
+            <div className="w-px mx-1.5 h-6 bg-gray-200"></div>
             {listAndTaskFeature.map((ele, index) => (
                 <div title={ele.name} key={index}>
                     <ele.Icon
-                        className="rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 cursor-pointer p-1.5"
+                        className="rounded text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer p-1.5"
                         size={"2rem"}
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={ele.onClick}
