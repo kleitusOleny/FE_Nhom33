@@ -74,6 +74,20 @@ const chatSlice = createSlice({
     setCurrentTarget(state, action: PayloadAction<ChatTarget | null>) {
       state.currentTarget = action.payload;
     },
+    openOrAddChatTarget(state, action: PayloadAction<ChatTarget>) {
+      const target = action.payload;
+      const existing = state.userList.find(
+        (c) =>
+          c.type === target.type &&
+          c.name.toLowerCase() === target.name.toLowerCase()
+      );
+      if (existing) {
+        state.currentTarget = existing;
+      } else {
+        state.userList.unshift(target);
+        state.currentTarget = target;
+      }
+    },
     setPeopleHistory(
       state,
       action: PayloadAction<{ targetName: string; messages: ChatMessage[] }>
@@ -154,6 +168,7 @@ export const {
   setChatError,
   setUserList,
   setCurrentTarget,
+  openOrAddChatTarget,
   setPeopleHistory,
   setRoomHistory,
   addIncomingMessage,
