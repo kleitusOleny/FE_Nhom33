@@ -4,8 +4,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { WebsocketInstance } from "@/socket/WebsocketInstance";
 import { WebSocketEvent } from "@/socket/types/WebSoketMessage";
 import { chatSocketService } from "@/services/chatSocketService";
+import { logout } from "@/store/slice/authSlice";
 import {
-  addIncomingMessage, setCurrentTarget, setPeopleHistory, setRoomHistory, setUserList,
+  addIncomingMessage, resetChatState, setCurrentTarget, setPeopleHistory, setRoomHistory, setUserList,
   type ChatMessage, type ChatTarget,
 } from "@/store/slice/chatSlice";
 
@@ -125,6 +126,14 @@ export function useChatSocket(enabled: boolean) {
       }
     });
 
+    const unsubLogout = ws.subscribe(WebSocketEvent.LOGOUT, (res) => {
+      if (res.status === "success") {
+        dispatch(logout());
+        dispatch(resetChatState());
+        navigate("/login");
+      }
+    });
+
     const unsubAuth = ws.subscribe("AUTH" as WebSocketEvent, () => {
       const user = localStorage.getItem("username");
       const code = localStorage.getItem("re_login_code");
@@ -143,6 +152,7 @@ export function useChatSocket(enabled: boolean) {
       unsubRoomHistory();
       unsubSendChat();
       unsubReLogin();
+      unsubLogout();
       unsubAuth();
     };
   }, [dispatch, enabled, navigate]);

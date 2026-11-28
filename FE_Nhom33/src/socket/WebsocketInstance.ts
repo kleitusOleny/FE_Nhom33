@@ -77,8 +77,14 @@ export class WebsocketInstance {
         data: WsSendMsgPayloadMap[K]
     ) {
         const raw = JSON.stringify({action: "onchat", data: {event, data}})
-        if (this.socket?.readyState === WebSocket.OPEN) this.socket.send(raw)
-        else if (this.socket?.readyState === WebSocket.CONNECTING) this.queue.push(raw)
+        if (this.socket?.readyState === WebSocket.OPEN) {
+            this.socket.send(raw)
+        } else if (this.socket?.readyState === WebSocket.CONNECTING) {
+            this.queue.push(raw)
+        } else {
+            this.queue.push(raw)
+            this.connect()
+        }
     }
 
     public subscribe<K extends WebSocketEvent>(

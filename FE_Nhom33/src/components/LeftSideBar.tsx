@@ -1,10 +1,14 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import * as Popover from "@radix-ui/react-popover";
+import { LogOut, Settings } from "lucide-react";
 import { BsPeopleFill } from "react-icons/bs";
 import Search from "@/components/leftsidebar/Search.tsx";
 import ChatFilterBar from "@/components/leftsidebar/ChatFilterBar.tsx";
 import UserChatItem from "@/components/leftsidebar/UserChatItem.tsx";
 import GroupChatItem from "@/components/leftsidebar/GroupChatItem.tsx";
+import { chatSocketService } from "@/services/chatSocketService";
+import { WebsocketInstance } from "@/socket/WebsocketInstance";
 import { setCurrentTarget, type ChatTarget } from "@/store/slice/chatSlice";
 import type { AppDispatch, RootState } from "@/store/store";
 
@@ -16,6 +20,7 @@ export default function LeftSideBar() {
 
   const [keyword, setKeyword] = useState("");
   const [_filterTab, setFilterTab] = useState<"priority" | "pinned">("priority");
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const groupChats = userList.filter((chat) => chat.type === 1);
   const dmChats = userList.filter(
@@ -28,15 +33,49 @@ export default function LeftSideBar() {
     dispatch(setCurrentTarget(chat));
   };
 
+  const handleLogout = () => {
+    setMenuOpen(false);
+    if (WebsocketInstance.getInstance().getSocket?.readyState === WebSocket.OPEN) {
+      chatSocketService.logout();
+    } else {
+      alert("Không thể đăng xuất. Kết nối WebSocket chưa được thiết lập");
+    }
+  };
+
   return (
     <aside className="w-full h-full flex flex-row bg-white select-none">
       {/* Left rail: active group chats */}
       <div className="w-16 shrink-0 h-full bg-gray-100 border-r border-gray-200 flex flex-col items-center py-3 gap-2.5 overflow-y-auto">
-        <div
-          title="Nhóm chat"
-          className="w-11 h-11 rounded-2xl bg-white border border-gray-200 text-indigo-600 flex items-center justify-center shadow-xs shrink-0">
-          <BsPeopleFill size={18} />
-        </div>
+        <Popover.Root open={menuOpen} onOpenChange={setMenuOpen}>
+          <Popover.Trigger asChild>
+            <button type="button"
+              title="Menu tài khoản"
+              className="w-11 h-11 rounded-2xl bg-white border border-gray-200 text-indigo-600 flex items-center justify-center shadow-xs shrink-0 hover:bg-indigo-50 transition-colors cursor-pointer">
+              <BsPeopleFill size={18} />
+            </button>
+          </Popover.Trigger>
+          <Popover.Portal>
+            <Popover.Content
+              side="right"
+              align="start"
+              sideOffset={8}
+              className="z-50 w-48 rounded-xl bg-white border border-gray-200 shadow-lg p-1.5 text-sm text-gray-700">
+              <button type="button"
+                onClick={() => setMenuOpen(false)}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-left cursor-pointer">
+                <Settings size={16} />
+                <span>Cài đặt</span>
+              </button>
+              <div className="my-1 h-px bg-gray-100" />
+              <button type="button"
+                onClick={handleLogout}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors text-left cursor-pointer">
+                <LogOut size={16} />
+                <span>Đăng xuất</span>
+              </button>
+            </Popover.Content>
+          </Popover.Portal>
+        </Popover.Root>
 
         <div className="w-8 h-px bg-gray-300 shrink-0" />
 
