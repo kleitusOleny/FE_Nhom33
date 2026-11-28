@@ -1,6 +1,14 @@
 import { User } from "lucide-react";
 import { AttachmentBubble } from "./AttachmentBubble";
 import type { MessageContent, MessagePayloadType } from "@/types/Message";
+import { MARKDOWN_PROSE_CLASS, markdownToHtml } from "@/utils/markdownUtil";
+
+const renderMarkdown = (text: string) => (
+    <div
+        className={MARKDOWN_PROSE_CLASS}
+        dangerouslySetInnerHTML={{ __html: markdownToHtml(text) }}
+    />
+);
 
 interface MessageProps {
     rawMessage: string;
@@ -107,7 +115,7 @@ export function Message({ rawMessage, isOwner, username, time }: MessageProps) {
                                 ))}
                                 {contentObj.type === "attachment" && (contentObj.content || formattedTime) && (
                                     <div className={`w-fit mt-1 p-2 px-3 rounded-2xl shadow-sm ${isOwner ? "bg-indigo-600 text-white" : "bg-white"}`}>
-                                        {contentObj.content}
+                                        {contentObj.content && renderMarkdown(contentObj.content)}
                                         {formattedTime && (
                                             <div className="w-full flex justify-end">
                                                 <p className={`${isOwner ? "text-indigo-200" : "text-gray-500"} text-end rounded text-[10px] mt-2`}>
@@ -129,7 +137,7 @@ export function Message({ rawMessage, isOwner, username, time }: MessageProps) {
                                         {username}
                                     </p>
                                 )}
-                                {contentObj.content}
+                                {renderMarkdown(contentObj.content)}
                                 {formattedTime && (
                                     <div className="w-full flex justify-end">
                                         <p className={`${isOwner ? "text-indigo-200" : "text-gray-500"} text-end rounded text-[10px] mt-2`}>
