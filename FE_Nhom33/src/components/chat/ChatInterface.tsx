@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { ChangeEvent } from "react";
+import type { ChangeEvent, KeyboardEvent } from "react";
 import {
     FileText,
     Image,
@@ -110,6 +110,17 @@ export function ChatInterface({
         setInputText(textarea.value);
         setHasContent(Boolean(textarea.value.trim()));
         resizeTextarea();
+    };
+
+    const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+        if (event.nativeEvent.isComposing || event.key !== "Enter") return;
+
+        event.preventDefault();
+        if (event.altKey) {
+            insertText("\n");
+        } else {
+            void handleSend();
+        }
     };
 
     const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
@@ -340,9 +351,10 @@ export function ChatInterface({
                         <textarea
                             className="min-w-0 text-md bg-neutral-200/75 rounded-3xl p-2 ps-4 flex-1 resize-none border-none outline-none focus:ring-0 focus:ring-offset-0"
                             onChange={handleInput}
+                            onKeyDown={handleKeyDown}
                             ref={textareaRef}
                             rows={1}
-                            placeholder={`Nhập tin nhắn tới ${targetLabel}...`}
+                            placeholder={`Nhập tin nhắn gửi tới ${targetLabel}...`}
                         />
 
                         <div className="flex items-start px-3 justify-end gap-3">
