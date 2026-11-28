@@ -130,21 +130,24 @@ export default function StickerPicker({
     };
 
     return (
-        <div className="fixed overflow-hidden rounded-lg shadow bottom-14 z-50 bg-white dark:bg-gray-800 border w-90">
-            <div className="relative">
-                <p className="shadow text-lg p-2 font-semibold text-center">Sticker</p>
-                <X
-                    className="absolute right-2 top-3 hover:bg-neutral-300/30 rounded cursor-pointer"
+        <div className="absolute right-0 bottom-full mb-3 overflow-hidden rounded-xl shadow-xl z-50 bg-white text-gray-800 border border-gray-200 w-90">
+            <div className="relative flex items-center justify-center px-3 py-2 border-b border-gray-200 bg-white">
+                <p className="text-base font-semibold text-gray-800">Sticker</p>
+                <button
+                    type="button"
                     onClick={onClose}
-                />
+                    className="absolute right-2 p-1 rounded-md text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition cursor-pointer"
+                    aria-label="Đóng"
+                >
+                    <X size={18} />
+                </button>
             </div>
-            <hr />
-            <div className="flex gap-2 justify-between px-3 mb-2 pt-2">
+            <div className="flex gap-2 justify-between px-3 py-2.5 border-b border-gray-100">
                 <input
                     type="search"
                     placeholder="Tìm kiếm..."
                     maxLength={50}
-                    className="p-2 w-full border rounded-lg"
+                    className="px-3 py-1.5 w-full border border-gray-300 rounded-lg text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     value={search}
                     onChange={(event) => {
                         setSearch(event.target.value);
@@ -153,14 +156,14 @@ export default function StickerPicker({
                 />
                 <button
                     type="button"
-                    className="border w-30 bg-indigo-500 text-white rounded-lg cursor-pointer dark:bg-neutral-400/30 dark:hover:bg-neutral-300/30 hover:bg-indigo-500/50"
+                    className="px-3 py-1.5 shrink-0 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition cursor-pointer"
                     onClick={() => changeTab("search")}
                 >
                     Tìm kiếm
                 </button>
             </div>
             {visibleItems.length > 0 ? (
-                <div className="overflow-y-auto h-80 p-2 grid grid-cols-4 gap-2">
+                <div className="overflow-y-auto h-80 p-2 grid grid-cols-4 gap-2 bg-white">
                     {visibleItems.map((item, index) => (
                         <StickerPreview
                             key={`${item.src}-${index}`}
@@ -171,19 +174,19 @@ export default function StickerPicker({
                     ))}
                 </div>
             ) : (
-                <div className="h-80 text-center content-center text-neutral-500">
+                <div className="h-80 text-center content-center text-gray-400 text-sm bg-white">
                     Không có sticker
                 </div>
             )}
 
-            <div className="flex justify-between">
+            <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-1">
                 <button
                     type="button"
-                    className={`p-2 ${currentPage - 1 > 0 ? "text-neutral-500 dark:text-neutral-100 cursor-pointer hover:bg-neutral-300/30" : "text-neutral-300 dark:text-neutral-500"}`}
+                    className={`p-2 rounded transition ${currentPage - 1 > 0 ? "text-gray-600 cursor-pointer hover:bg-gray-200/70" : "text-gray-300 cursor-not-allowed"}`}
                     disabled={currentPage - 1 <= 0}
                     onClick={() => setPage(currentPage - 1)}
                 >
-                    <ChevronLeft size="1.5rem" />
+                    <ChevronLeft size="1.4rem" />
                 </button>
 
                 <div className="flex justify-center">
@@ -191,7 +194,7 @@ export default function StickerPicker({
                         <button
                             type="button"
                             key={select.key}
-                            className={`p-2 dark:text-neutral-100 text-neutral-500 cursor-pointer ${key === select.key ? "text-yellow-700 bg-neutral-300/30" : "hover:bg-neutral-300/30"}`}
+                            className={`p-2 rounded transition cursor-pointer ${key === select.key ? "text-blue-600 bg-blue-100/70" : "text-gray-500 hover:bg-gray-200/70 hover:text-gray-800"}`}
                             onClick={() => changeTab(select.key)}
                         >
                             {select.icon}
@@ -200,11 +203,11 @@ export default function StickerPicker({
                 </div>
                 <button
                     type="button"
-                    className={`p-2 ${hasNext ? "text-neutral-500 dark:text-neutral-100 cursor-pointer hover:bg-neutral-300/30" : "text-neutral-300 dark:text-neutral-500"}`}
+                    className={`p-2 rounded transition ${hasNext ? "text-gray-600 cursor-pointer hover:bg-gray-200/70" : "text-gray-300 cursor-not-allowed"}`}
                     disabled={!hasNext}
                     onClick={() => setPage(currentPage + 1)}
                 >
-                    <ChevronRight size="1.5rem" />
+                    <ChevronRight size="1.4rem" />
                 </button>
             </div>
         </div>

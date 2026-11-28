@@ -14,13 +14,17 @@ export default function EmojiCustomPicker({
     );
 
     return (
-        <div className="fixed overflow-hidden rounded-lg border bottom-14 z-50 bg-white dark:bg-gray-800">
-            <div className="relative mb-1">
-                <p className="shadow text-lg p-2 font-semibold text-center">Emoji</p>
-                <X
-                    className="absolute right-2 top-3 hover:bg-neutral-300/30 rounded cursor-pointer"
+        <div className="absolute right-0 bottom-full mb-3 overflow-hidden rounded-xl border border-gray-200 shadow-xl z-50 bg-white text-gray-800">
+            <div className="relative flex items-center justify-center px-3 py-2 border-b border-gray-200 bg-white">
+                <p className="text-base font-semibold text-gray-800">Emoji</p>
+                <button
+                    type="button"
                     onClick={onClose}
-                />
+                    className="absolute right-2 p-1 rounded-md text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition cursor-pointer"
+                    aria-label="Đóng"
+                >
+                    <X size={18} />
+                </button>
             </div>
 
             <EmojiPicker
