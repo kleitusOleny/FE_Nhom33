@@ -33,6 +33,7 @@ interface ChatState {
   currentTarget: ChatTarget | null;
   peopleHistory: Record<string, ChatMessage[]>;
   roomHistory: Record<string, RoomData>;
+  onlineUsers: Record<string, boolean>;
   loadingUserList: boolean;
   loadingMessages: boolean;
   error: string | null;
@@ -43,6 +44,7 @@ const initialState: ChatState = {
   currentTarget: null,
   peopleHistory: {},
   roomHistory: {},
+  onlineUsers: {},
   loadingUserList: false,
   loadingMessages: false,
   error: null,
@@ -73,6 +75,40 @@ const chatSlice = createSlice({
     },
     setCurrentTarget(state, action: PayloadAction<ChatTarget | null>) {
       state.currentTarget = action.payload;
+    },
+    openOrAddChatTarget(state, action: PayloadAction<ChatTarget>) {
+      const target = action.payload;
+      const existing = state.userList.find(
+        (c) =>
+          c.type === target.type &&
+          c.name.toLowerCase() === target.name.toLowerCase()
+      );
+      if (existing) {
+        state.currentTarget = existing;
+      } else {
+        state.userList.unshift(target);
+        state.currentTarget = target;
+      }
+    },
+    removeChatTarget(
+      state,
+      action: PayloadAction<{ name: string; type: 0 | 1 }>
+    ) {
+      state.userList = state.userList.filter(
+        (c) =>
+          !(c.type === action.payload.type && c.name === action.payload.name)
+      );
+      if (
+        state.currentTarget?.type === action.payload.type &&
+        state.currentTarget.name === action.payload.name
+      ) {
+        state.currentTarget = state.userList[0] ?? null;
+      }
+      if (action.payload.type === 1) {
+        delete state.roomHistory[action.payload.name];
+      } else {
+        delete state.peopleHistory[action.payload.name];
+      }
     },
     setPeopleHistory(
       state,
@@ -142,6 +178,12 @@ const chatSlice = createSlice({
         });
       }
     },
+    setUserOnlineStatus(
+      state,
+      action: PayloadAction<{ username: string; status: boolean }>
+    ) {
+      state.onlineUsers[action.payload.username] = action.payload.status;
+    },
     resetChatState() {
       return initialState;
     },
@@ -154,9 +196,12 @@ export const {
   setChatError,
   setUserList,
   setCurrentTarget,
+  openOrAddChatTarget,
+  removeChatTarget,
   setPeopleHistory,
   setRoomHistory,
   addIncomingMessage,
+  setUserOnlineStatus,
   resetChatState,
 } = chatSlice.actions;
 

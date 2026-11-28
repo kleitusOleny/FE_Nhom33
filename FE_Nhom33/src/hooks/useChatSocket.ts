@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { WebsocketInstance } from "@/socket/WebsocketInstance";
@@ -6,7 +6,7 @@ import { WebSocketEvent } from "@/socket/types/WebSoketMessage";
 import { chatSocketService } from "@/services/chatSocketService";
 import { logout } from "@/store/slice/authSlice";
 import {
-  addIncomingMessage, resetChatState, setCurrentTarget, setPeopleHistory, setRoomHistory, setUserList,
+  addIncomingMessage, resetChatState, setCurrentTarget, setPeopleHistory, setRoomHistory, setUserList, setUserOnlineStatus,
   type ChatMessage, type ChatTarget,
 } from "@/store/slice/chatSlice";
 
@@ -20,9 +20,20 @@ export function useChatSocket(enabled: boolean) {
   );
 
   const currentTargetRef = useRef<ChatTarget | null>(currentTarget);
+  const onlineCheckQueueRef = useRef<string[]>([]);
+
   useEffect(() => {
     currentTargetRef.current = currentTarget;
   }, [currentTarget]);
+
+  const enqueueOnlineCheck = useCallback((username: string) => {
+    const queue = onlineCheckQueueRef.current;
+    if (!username || queue.includes(username)) return;
+    queue.push(username);
+    if (queue.length === 1) {
+      chatSocketService.checkUserOnline(username);
+    }
+  }, []);
 
   useEffect(() => {
     if (!enabled) return;
@@ -38,8 +49,25 @@ export function useChatSocket(enabled: boolean) {
           actionTime: item.actionTime,
         }));
         dispatch(setUserList(mapped));
+        mapped
+          .filter((item) => item.type === 0)
+          .forEach((item) => enqueueOnlineCheck(item.name));
       }
     });
+
+    const unsubCheckOnline = ws.subscribe(
+      WebSocketEvent.CHECK_USER_ONLINE,
+      (res) => {
+        const username = onlineCheckQueueRef.current.shift();
+        if (res.status === "success" && username) {
+          dispatch(setUserOnlineStatus({ username, status: res.data.status }));
+        }
+        const nextUser = onlineCheckQueueRef.current[0];
+        if (nextUser) {
+          chatSocketService.checkUserOnline(nextUser);
+        }
+      }
+    );
 
     const unsubPeopleHistory = ws.subscribe(
       WebSocketEvent.GET_PEOPLE_CHAT_MES,
@@ -70,12 +98,29 @@ export function useChatSocket(enabled: boolean) {
             chatData?: ChatMessage[];
             chatMess?: ChatMessage[];
           };
+          const serverMembers = raw.userList ?? raw.user ?? [];
+          const messages = raw.chatData ?? raw.chatMess ?? [];
+          const memberNames = new Set<string>(
+            serverMembers.map((m) => m.name).filter(Boolean)
+          );
+          if (raw.own) memberNames.add(raw.own);
+          messages.forEach((m) => {
+            if (m.name) memberNames.add(m.name);
+          });
+          const members =
+            serverMembers.length > 0
+              ? serverMembers
+              : Array.from(memberNames).map((name, idx) => ({
+                  id: idx + 1,
+                  name,
+                }));
+
           dispatch(
             setRoomHistory({
               name: raw.name,
               own: raw.own,
-              members: raw.userList ?? raw.user ?? [],
-              messages: raw.chatData ?? raw.chatMess ?? [],
+              members,
+              messages,
             })
           );
         }
@@ -148,6 +193,7 @@ export function useChatSocket(enabled: boolean) {
 
     return () => {
       unsubUserList();
+      unsubCheckOnline();
       unsubPeopleHistory();
       unsubRoomHistory();
       unsubSendChat();
@@ -155,10 +201,16 @@ export function useChatSocket(enabled: boolean) {
       unsubLogout();
       unsubAuth();
     };
-  }, [dispatch, enabled, navigate]);
+  }, [dispatch, enabled, enqueueOnlineCheck, navigate]);
+
+  const targetName = currentTarget?.name;
+  const targetType = currentTarget?.type;
 
   useEffect(() => {
-    if (!enabled || !currentTarget) return;
-    chatSocketService.fetchChatHistory(currentTarget, 1);
-  }, [currentTarget, enabled]);
+    if (!enabled || !targetName || targetType === undefined) return;
+    chatSocketService.fetchChatHistory({ name: targetName, type: targetType }, 1);
+    if (targetType === 0) {
+      enqueueOnlineCheck(targetName);
+    }
+  }, [targetName, targetType, enabled, enqueueOnlineCheck]);
 }

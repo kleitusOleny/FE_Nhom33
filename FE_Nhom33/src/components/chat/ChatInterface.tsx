@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { ChangeEvent } from "react";
+import type { ChangeEvent, KeyboardEvent } from "react";
 import {
     FileText,
     Image,
@@ -19,6 +19,11 @@ import EmojiCustomPicker from "./EmojiCustomPicker";
 import { useUpload } from "@/hooks/useUpload";
 import { validateAttachment } from "@/services/storageService";
 import type { AttachmentValue } from "@/types/Message";
+import {
+    hasMarkdownSyntax,
+    MARKDOWN_PROSE_CLASS,
+    markdownToHtml,
+} from "@/utils/markdownUtil";
 
 interface ChatTarget {
     name: string;
@@ -68,6 +73,7 @@ export function ChatInterface({
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const [hasContent, setHasContent] = useState(false);
+    const [inputText, setInputText] = useState("");
     const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
     const [openStickerPicker, setOpenStickerPicker] = useState(false);
     const [openEmojiPicker, setOpenEmojiPicker] = useState(false);
@@ -85,7 +91,9 @@ export function ChatInterface({
     };
 
     const handleInput = () => {
-        setHasContent(Boolean(textareaRef.current?.value.trim()));
+        const val = textareaRef.current?.value ?? "";
+        setInputText(val);
+        setHasContent(Boolean(val.trim()));
         resizeTextarea();
     };
 
@@ -99,8 +107,20 @@ export function ChatInterface({
             textarea.value.slice(0, start) + text + textarea.value.slice(end);
         textarea.focus();
         textarea.setSelectionRange(start + text.length, start + text.length);
+        setInputText(textarea.value);
         setHasContent(Boolean(textarea.value.trim()));
         resizeTextarea();
+    };
+
+    const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+        if (event.nativeEvent.isComposing || event.key !== "Enter") return;
+
+        event.preventDefault();
+        if (event.altKey) {
+            insertText("\n");
+        } else {
+            void handleSend();
+        }
     };
 
     const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
@@ -166,6 +186,7 @@ export function ChatInterface({
         onSend(makePayload(type, text, attachments));
 
         if (textareaRef.current) textareaRef.current.value = "";
+        setInputText("");
         setHasContent(false);
         setPendingFiles([]);
         setOpenStickerPicker(false);
@@ -312,28 +333,50 @@ export function ChatInterface({
                         onChange={handleFileSelect}
                     />
 
+                    {hasMarkdownSyntax(inputText) && (
+                        <div className="mx-3 mb-2 px-3 py-2 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 max-h-28 overflow-y-auto">
+                            <p className="text-[11px] font-semibold text-gray-400 mb-1">
+                                Xem trước:
+                            </p>
+                            <div
+                                className={MARKDOWN_PROSE_CLASS}
+                                dangerouslySetInnerHTML={{
+                                    __html: markdownToHtml(inputText),
+                                }}
+                            />
+                        </div>
+                    )}
+
                     <div className="min-h-4 flex p-2 pt-0">
                         <textarea
                             className="min-w-0 text-md bg-neutral-200/75 rounded-3xl p-2 ps-4 flex-1 resize-none border-none outline-none focus:ring-0 focus:ring-offset-0"
                             onChange={handleInput}
+                            onKeyDown={handleKeyDown}
                             ref={textareaRef}
                             rows={1}
-                            placeholder={`Nhập tin nhắn tới ${targetLabel}...`}
+                            placeholder={`Nhập tin nhắn gửi tới ${targetLabel}...`}
                         />
 
                         <div className="flex items-start px-3 justify-end gap-3">
-                            <div className="flex items-start justify-end gap-3 pt-2">
+                            <div className="relative flex items-start justify-end gap-3 pt-2">
                                 <Image
                                     size="1.5rem"
-                                    className={`text-gray-700 dark:text-white hover:text-neutral-500 dark:hover:text-neutral-400 ${isUploading ? "cursor-not-allowed opacity-40" : "cursor-pointer"}`}
+                                    className={`text-gray-600 hover:text-blue-600 transition-colors ${isUploading ? "cursor-not-allowed opacity-40" : "cursor-pointer"}`}
                                     onClick={() => {
-                                        if (!isUploading) fileInputRef.current?.click();
+                                        if (!isUploading) {
+                                            setOpenStickerPicker(false);
+                                            setOpenEmojiPicker(false);
+                                            fileInputRef.current?.click();
+                                        }
                                     }}
                                 />
                                 <Sticker
                                     size="1.5rem"
-                                    className="cursor-pointer text-gray-700 dark:text-white hover:text-neutral-500 dark:hover:text-neutral-400"
-                                    onClick={() => setOpenStickerPicker((open) => !open)}
+                                    className="cursor-pointer text-gray-600 hover:text-blue-600 transition-colors"
+                                    onClick={() => {
+                                        setOpenEmojiPicker(false);
+                                        setOpenStickerPicker((open) => !open);
+                                    }}
                                 />
                                 {openStickerPicker && (
                                     <StickerPicker
@@ -346,8 +389,11 @@ export function ChatInterface({
                                 )}
                                 <Smile
                                     size="1.5rem"
-                                    className="cursor-pointer text-gray-700 dark:text-white hover:text-neutral-500 dark:hover:text-neutral-400"
-                                    onClick={() => setOpenEmojiPicker((open) => !open)}
+                                    className="cursor-pointer text-gray-600 hover:text-blue-600 transition-colors"
+                                    onClick={() => {
+                                        setOpenStickerPicker(false);
+                                        setOpenEmojiPicker((open) => !open);
+                                    }}
                                 />
                                 {openEmojiPicker && (
                                     <EmojiCustomPicker
@@ -361,9 +407,9 @@ export function ChatInterface({
                                     type="button"
                                     onClick={() => { void handleSend(); }}
                                     disabled={isUploading || (!hasContent && pendingFiles.length === 0)}
-                                    className={`cursor-pointer rounded-full p-2 transition-colors ${isUploading || (!hasContent && pendingFiles.length === 0)
-                                        ? "bg-gray-300 cursor-not-allowed"
-                                        : "bg-indigo-500 hover:bg-indigo-400 text-neutral-100"
+                                    className={`rounded-full p-2 transition-colors text-white ${isUploading || (!hasContent && pendingFiles.length === 0)
+                                        ? "bg-blue-300 cursor-not-allowed"
+                                        : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
                                         }`}
                                 >
                                     {isUploading ? (
