@@ -7,6 +7,7 @@ import Search from "@/components/leftsidebar/Search.tsx";
 import ChatFilterBar from "@/components/leftsidebar/ChatFilterBar.tsx";
 import UserChatItem from "@/components/leftsidebar/UserChatItem.tsx";
 import GroupChatItem from "@/components/leftsidebar/GroupChatItem.tsx";
+import SettingsModal from "@/components/settings/SettingsModal.tsx";
 import { chatSocketService } from "@/services/chatSocketService";
 import { WebsocketInstance } from "@/socket/WebsocketInstance";
 import { setCurrentTarget, type ChatTarget } from "@/store/slice/chatSlice";
@@ -21,6 +22,7 @@ export default function LeftSideBar() {
   const [keyword, setKeyword] = useState("");
   const [_filterTab, setFilterTab] = useState<"priority" | "pinned">("priority");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const groupChats = userList.filter((chat) => chat.type === 1);
   const dmChats = userList.filter(
@@ -61,7 +63,10 @@ export default function LeftSideBar() {
               sideOffset={8}
               className="z-50 w-48 rounded-xl bg-white border border-gray-200 shadow-lg p-1.5 text-sm text-gray-700">
               <button type="button"
-                onClick={() => setMenuOpen(false)}
+                onClick={() => {
+                  setMenuOpen(false);
+                  setSettingsOpen(true);
+                }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-left cursor-pointer">
                 <Settings size={16} />
                 <span>Cài đặt</span>
@@ -133,6 +138,11 @@ export default function LeftSideBar() {
           )}
         </div>
       </div>
+
+      <SettingsModal
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+      />
     </aside>
   );
 }
