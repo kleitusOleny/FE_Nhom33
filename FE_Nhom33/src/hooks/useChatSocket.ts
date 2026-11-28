@@ -98,12 +98,29 @@ export function useChatSocket(enabled: boolean) {
             chatData?: ChatMessage[];
             chatMess?: ChatMessage[];
           };
+          const serverMembers = raw.userList ?? raw.user ?? [];
+          const messages = raw.chatData ?? raw.chatMess ?? [];
+          const memberNames = new Set<string>(
+            serverMembers.map((m) => m.name).filter(Boolean)
+          );
+          if (raw.own) memberNames.add(raw.own);
+          messages.forEach((m) => {
+            if (m.name) memberNames.add(m.name);
+          });
+          const members =
+            serverMembers.length > 0
+              ? serverMembers
+              : Array.from(memberNames).map((name, idx) => ({
+                  id: idx + 1,
+                  name,
+                }));
+
           dispatch(
             setRoomHistory({
               name: raw.name,
               own: raw.own,
-              members: raw.userList ?? raw.user ?? [],
-              messages: raw.chatData ?? raw.chatMess ?? [],
+              members,
+              messages,
             })
           );
         }
@@ -186,11 +203,14 @@ export function useChatSocket(enabled: boolean) {
     };
   }, [dispatch, enabled, enqueueOnlineCheck, navigate]);
 
+  const targetName = currentTarget?.name;
+  const targetType = currentTarget?.type;
+
   useEffect(() => {
-    if (!enabled || !currentTarget) return;
-    chatSocketService.fetchChatHistory(currentTarget, 1);
-    if (currentTarget.type === 0) {
-      enqueueOnlineCheck(currentTarget.name);
+    if (!enabled || !targetName || targetType === undefined) return;
+    chatSocketService.fetchChatHistory({ name: targetName, type: targetType }, 1);
+    if (targetType === 0) {
+      enqueueOnlineCheck(targetName);
     }
-  }, [currentTarget, enabled, enqueueOnlineCheck]);
+  }, [targetName, targetType, enabled, enqueueOnlineCheck]);
 }

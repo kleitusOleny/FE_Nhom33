@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { BsPeople, BsChevronDown, BsChevronUp } from "react-icons/bs";
 import {
+  QuickActions,
   MediaSection,
   FilesSection,
   PrivacySection,
@@ -63,6 +64,7 @@ export default function GroupChatInfo({
             {isActive ? "Đang hoạt động" : "Không hoạt động"}
           </span>
         </div>
+        <QuickActions isGroup={true} />
       </div>
 
       <div className="p-4 border-b border-gray-100">

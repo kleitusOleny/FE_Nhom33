@@ -28,6 +28,7 @@ export default function LeftSideBar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const pendingUserRef = useRef("");
+  const pendingGroupRef = useRef("");
 
   useEffect(() => {
     const ws = WebsocketInstance.getInstance();
@@ -65,6 +66,32 @@ export default function LeftSideBar() {
 
     const unsubCreateRoom = ws.subscribe(WebSocketEvent.CREATE_ROOM, (res) => {
       if (res.status === "success") {
+        pendingGroupRef.current = "";
+        const roomData = res.data as unknown as {
+          name: string;
+          user?: { id: number }[];
+        };
+        dispatch(
+          openOrAddChatTarget({
+            name: roomData.name,
+            type: 1,
+            actionTime: new Date().toISOString(),
+            memberCount: roomData.user?.length ?? 1,
+          })
+        );
+        setKeyword("");
+        setActionError(null);
+      } else if (pendingGroupRef.current) {
+        const groupName = pendingGroupRef.current;
+        chatSocketService.joinRoom(groupName);
+      } else {
+        setActionError(res.mes || "Tạo nhóm thất bại");
+      }
+    });
+
+    const unsubJoinRoom = ws.subscribe(WebSocketEvent.JOIN_ROOM, (res) => {
+      pendingGroupRef.current = "";
+      if (res.status === "success") {
         const roomData = res.data as unknown as {
           name: string;
           user?: { id: number }[];
@@ -80,13 +107,14 @@ export default function LeftSideBar() {
         setKeyword("");
         setActionError(null);
       } else {
-        setActionError(res.mes || "Tạo nhóm thất bại");
+        setActionError(res.mes || "Không thể tạo hoặc tham gia nhóm");
       }
     });
 
     return () => {
       unsubCheckUser();
       unsubCreateRoom();
+      unsubJoinRoom();
     };
   }, [dispatch]);
 
@@ -135,6 +163,7 @@ export default function LeftSideBar() {
     }
 
     setActionError(null);
+    pendingGroupRef.current = targetName;
     chatSocketService.createRoom(targetName);
   };
 
