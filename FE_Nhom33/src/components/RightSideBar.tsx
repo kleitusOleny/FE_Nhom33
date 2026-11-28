@@ -1,10 +1,111 @@
-import {useSelector} from "react-redux";
+import {useEffect, useMemo, useRef, useState} from "react";
+import {useDispatch, useSelector} from "react-redux";
 import UserChatInfo from "./rightsidebar/UserChatInfo.tsx";
 import GroupChatInfo from "./rightsidebar/GroupChatInfo.tsx";
-import type {RootState} from "@/store/store";
+import type {SharedFile} from "./rightsidebar/SharedSections.tsx";
+import {WebsocketInstance} from "@/socket/WebsocketInstance";
+import {WebSocketEvent} from "@/socket/types/WebSoketMessage";
+import {chatSocketService} from "@/services/chatSocketService";
+import {getAttachmentKind, getFileNameFromUrl} from "@/services/storageService";
+import {removeChatTarget, type ChatMessage} from "@/store/slice/chatSlice";
+import type {AppDispatch, RootState} from "@/store/store";
+import {DateUtil} from "@/utils/DateUtil";
 
-export default function RightSideBar({isActive = true}: { isActive?: boolean }) {
-    const {currentTarget, roomHistory} = useSelector((state: RootState) => state.chat);
+interface ParsedAttachment {
+    url: string;
+    name?: string;
+    kind?: "image" | "video" | "file";
+}
+
+function extractAttachmentsFromMessages(messages: ChatMessage[]) {
+    const media: string[] = [];
+    const files: SharedFile[] = [];
+
+    messages.forEach((msg) => {
+        if (!msg.mes) return;
+        try {
+            const parsed = JSON.parse(msg.mes) as {
+                type?: string; attachment?: Array<string | ParsedAttachment>;
+            };
+            if (parsed?.type !== "attachment" || !Array.isArray(parsed.attachment)) {
+                return;
+            }
+
+            const dateLabel = DateUtil.formatChatTime(msg.createAt);
+            parsed.attachment.forEach((item) => {
+                const url = typeof item === "string" ? item : item?.url;
+                if (!url) return;
+
+                const kind = typeof item === "object" && item?.kind ? item.kind : getAttachmentKind(url);
+
+                if (kind === "image" || kind === "video") {
+                    media.push(url);
+                } else {
+                    const name = (typeof item === "object" && item?.name) || getFileNameFromUrl(url);
+                    files.push({name, url, date: dateLabel});
+                }
+            });
+        } catch {
+
+        }
+    });
+
+    return {media: media.reverse(), files: files.reverse()};
+}
+
+export default function RightSideBar() {
+    const dispatch = useDispatch<AppDispatch>();
+    const {currentTarget, roomHistory, peopleHistory} = useSelector((state: RootState) => state.chat);
+
+    const [onlineUsers, setOnlineUsers] = useState<Record<string, boolean>>({});
+    const [leaveError, setLeaveError] = useState<string | null>(null);
+    const pendingOnlineUserRef = useRef("");
+    const pendingLeaveRoomRef = useRef("");
+
+    useEffect(() => {
+        const ws = WebsocketInstance.getInstance();
+
+        const unsubCheckOnline = ws.subscribe(WebSocketEvent.CHECK_USER_ONLINE, (res) => {
+            const user = pendingOnlineUserRef.current;
+            if (res.status === "success" && user) {
+                setOnlineUsers((prev) => ({...prev, [user]: res.data.status}));
+            }
+        });
+
+        const unsubOutRoom = ws.subscribe(WebSocketEvent.OUT_ROOM, (res) => {
+            const roomName = pendingLeaveRoomRef.current;
+            pendingLeaveRoomRef.current = "";
+            if (res.status === "success") {
+                if (roomName) {
+                    setLeaveError(null);
+                    dispatch(removeChatTarget({name: roomName, type: 1}));
+                }
+            } else {
+                setLeaveError(res.mes || "Không thể rời khỏi nhóm");
+            }
+        });
+
+        return () => {
+            unsubCheckOnline();
+            unsubOutRoom();
+        };
+    }, [dispatch]);
+
+    useEffect(() => {
+        if (!currentTarget || currentTarget.type !== 0) return;
+        pendingOnlineUserRef.current = currentTarget.name;
+        chatSocketService.checkUserOnline(currentTarget.name);
+    }, [currentTarget]);
+
+    const isGroup = currentTarget?.type === 1;
+    const roomInfo = currentTarget && isGroup ? roomHistory[currentTarget.name] : undefined;
+
+    const conversationMessages = useMemo(() => {
+        if (!currentTarget) return [];
+        return isGroup ? roomHistory[currentTarget.name]?.messages ?? [] : peopleHistory[currentTarget.name] ?? [];
+    }, [currentTarget, isGroup, peopleHistory, roomHistory]);
+
+    const {media, files} = useMemo(() => extractAttachmentsFromMessages(conversationMessages), [conversationMessages]);
 
     if (!currentTarget) {
         return (<aside
@@ -13,11 +114,17 @@ export default function RightSideBar({isActive = true}: { isActive?: boolean }) 
             </aside>);
     }
 
-    const isGroup = currentTarget.type === 1;
-    const roomInfo = isGroup ? roomHistory[currentTarget.name] : undefined;
     const groupMembers = roomInfo?.members.map((m) => ({
         name: m.name, role: roomInfo.own === m.name ? "Trưởng nhóm" : "Thành viên", isLeader: roomInfo.own === m.name,
     })) ?? [];
+
+    const isActive = isGroup ? true : (onlineUsers[currentTarget.name] ?? false);
+
+    const handleLeaveGroup = () => {
+        setLeaveError(null);
+        pendingLeaveRoomRef.current = currentTarget.name;
+        chatSocketService.leaveRoom(currentTarget.name);
+    };
 
     return (<aside
             className="w-80 h-full flex flex-col bg-white text-gray-800 select-none overflow-hidden border-l border-gray-200">
@@ -28,7 +135,16 @@ export default function RightSideBar({isActive = true}: { isActive?: boolean }) 
             {isGroup ? (<GroupChatInfo
                     groupName={currentTarget.name}
                     members={groupMembers}
+                    media={media}
+                    files={files}
                     isActive={isActive}
-                />) : (<UserChatInfo name={currentTarget.name} isActive={isActive}/>)}
+                    onLeaveGroup={handleLeaveGroup}
+                    leaveError={leaveError}
+                />) : (<UserChatInfo
+                    name={currentTarget.name}
+                    media={media}
+                    files={files}
+                    isActive={isActive}
+                />)}
         </aside>);
 }

@@ -68,8 +68,15 @@ export function QuickActions({
   );
 }
 
+export interface SharedFile {
+  name: string;
+  url?: string;
+  size?: string;
+  date?: string;
+}
+
 // 2. Khối Ảnh & Video đã gửi dùng chung
-export function MediaSection() {
+export function MediaSection({ media = [] }: { media?: string[] }) {
   const [isOpen, setIsOpen] = useState(true);
 
   return (
@@ -81,36 +88,43 @@ export function MediaSection() {
       >
         <div className="flex items-center gap-2">
           <BsImage size={17} className="text-gray-500" />
-          <span>Ảnh & Video đã gửi</span>
+          <span>Ảnh & Video đã gửi ({media.length})</span>
         </div>
         {isOpen ? <BsChevronUp size={14} /> : <BsChevronDown size={14} />}
       </button>
 
       {isOpen && (
-        <div className="mt-3 grid grid-cols-3 gap-1.5">
-          {[1, 2, 3, 4, 5, 6].map((item) => (
-            <div
-              key={item}
-              className="aspect-square bg-gray-100 hover:bg-gray-200 rounded-md border border-gray-200 flex items-center justify-center text-xs text-gray-400 transition cursor-pointer"
-            >
-              Ảnh {item}
-            </div>
-          ))}
-        </div>
+        media.length === 0 ? (
+          <p className="mt-3 text-xs text-gray-400 text-center">
+            Chưa có ảnh hoặc video nào
+          </p>
+        ) : (
+          <div className="mt-3 grid grid-cols-3 gap-1.5">
+            {media.map((url, idx) => (
+              <a
+                key={`${url}-${idx}`}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block aspect-square overflow-hidden rounded-md border border-gray-200 hover:opacity-90 transition"
+              >
+                <img
+                  src={url}
+                  alt={`media-${idx}`}
+                  className="h-full w-full object-cover"
+                />
+              </a>
+            ))}
+          </div>
+        )
       )}
     </div>
   );
 }
 
 // 3. Khối Tài liệu & File chia sẻ dùng chung
-export function FilesSection() {
+export function FilesSection({ files = [] }: { files?: SharedFile[] }) {
   const [isOpen, setIsOpen] = useState(false);
-
-  const sampleFiles = [
-    { name: "Bao_cao_tuan_3.pdf", size: "2.4 MB", date: "12/11/2026" },
-    { name: "So_do_kien_truc.png", size: "850 KB", date: "10/11/2026" },
-    { name: "Tai_lieu_yeu_cau.docx", size: "1.1 MB", date: "08/11/2026" },
-  ];
 
   return (
     <div className="p-4 border-b border-gray-100">
@@ -121,36 +135,53 @@ export function FilesSection() {
       >
         <div className="flex items-center gap-2">
           <BsFileEarmarkText size={17} className="text-gray-500" />
-          <span>Tài liệu đã chia sẻ</span>
+          <span>Tài liệu đã chia sẻ ({files.length})</span>
         </div>
         {isOpen ? <BsChevronUp size={14} /> : <BsChevronDown size={14} />}
       </button>
 
       {isOpen && (
-        <div className="mt-3 space-y-2 text-xs">
-          {sampleFiles.map((file, i) => (
-            <div
-              key={i}
-              className="flex items-center justify-between p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition cursor-pointer"
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <BsFileEarmarkText size={16} className="text-blue-600 shrink-0" />
-                <div className="truncate">
-                  <p className="font-medium text-gray-800 truncate">{file.name}</p>
-                  <span className="text-[10px] text-gray-400">{file.size}</span>
+        files.length === 0 ? (
+          <p className="mt-3 text-xs text-gray-400 text-center">
+            Chưa có tài liệu nào
+          </p>
+        ) : (
+          <div className="mt-3 space-y-2 text-xs">
+            {files.map((file, i) => (
+              <a
+                key={`${file.name}-${i}`}
+                href={file.url || "#"}
+                target={file.url ? "_blank" : undefined}
+                rel={file.url ? "noopener noreferrer" : undefined}
+                className="flex items-center justify-between p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition cursor-pointer"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <BsFileEarmarkText size={16} className="text-blue-600 shrink-0" />
+                  <div className="truncate">
+                    <p className="font-medium text-gray-800 truncate">{file.name}</p>
+                    {file.size && <span className="text-[10px] text-gray-400">{file.size}</span>}
+                  </div>
                 </div>
-              </div>
-              <span className="text-[10px] text-gray-400 shrink-0">{file.date}</span>
-            </div>
-          ))}
-        </div>
+                {file.date && <span className="text-[10px] text-gray-400 shrink-0">{file.date}</span>}
+              </a>
+            ))}
+          </div>
+        )
       )}
     </div>
   );
 }
 
 // 4. Khối Tùy chọn & Bảo mật dùng chung
-export function PrivacySection({ isGroup = false }: { isGroup?: boolean }) {
+export function PrivacySection({
+  isGroup = false,
+  onLeaveGroup,
+  leaveError,
+}: {
+  isGroup?: boolean;
+  onLeaveGroup?: () => void;
+  leaveError?: string | null;
+}) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -180,6 +211,7 @@ export function PrivacySection({ isGroup = false }: { isGroup?: boolean }) {
           {isGroup ? (
             <button
               type="button"
+              onClick={onLeaveGroup}
               className="w-full flex items-center gap-2.5 p-2 rounded-lg text-red-600 hover:bg-red-50 transition text-left cursor-pointer"
             >
               <BsBoxArrowRight size={15} />
@@ -193,6 +225,10 @@ export function PrivacySection({ isGroup = false }: { isGroup?: boolean }) {
               <BsShieldX size={15} />
               <span>Chặn người dùng này</span>
             </button>
+          )}
+
+          {leaveError && (
+            <p className="px-2 pt-1 text-[11px] text-red-500">{leaveError}</p>
           )}
         </div>
       )}

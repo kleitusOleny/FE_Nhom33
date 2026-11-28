@@ -40,6 +40,10 @@ export const chatSocketService = {
     WebsocketInstance.getInstance().send(WebSocketEvent.CHECK_USER_EXIST, { user });
   },
 
+  checkUserOnline(user: string) {
+    WebsocketInstance.getInstance().send(WebSocketEvent.CHECK_USER_ONLINE, { user });
+  },
+
   reLogin(user: string, code: string) {
     WebsocketInstance.getInstance().send(WebSocketEvent.RE_LOGIN, { user, code });
   },

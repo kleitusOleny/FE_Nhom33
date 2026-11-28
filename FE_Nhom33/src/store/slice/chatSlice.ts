@@ -88,6 +88,26 @@ const chatSlice = createSlice({
         state.currentTarget = target;
       }
     },
+    removeChatTarget(
+      state,
+      action: PayloadAction<{ name: string; type: 0 | 1 }>
+    ) {
+      state.userList = state.userList.filter(
+        (c) =>
+          !(c.type === action.payload.type && c.name === action.payload.name)
+      );
+      if (
+        state.currentTarget?.type === action.payload.type &&
+        state.currentTarget.name === action.payload.name
+      ) {
+        state.currentTarget = state.userList[0] ?? null;
+      }
+      if (action.payload.type === 1) {
+        delete state.roomHistory[action.payload.name];
+      } else {
+        delete state.peopleHistory[action.payload.name];
+      }
+    },
     setPeopleHistory(
       state,
       action: PayloadAction<{ targetName: string; messages: ChatMessage[] }>
@@ -169,6 +189,7 @@ export const {
   setUserList,
   setCurrentTarget,
   openOrAddChatTarget,
+  removeChatTarget,
   setPeopleHistory,
   setRoomHistory,
   addIncomingMessage,
