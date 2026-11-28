@@ -19,6 +19,11 @@ import EmojiCustomPicker from "./EmojiCustomPicker";
 import { useUpload } from "@/hooks/useUpload";
 import { validateAttachment } from "@/services/storageService";
 import type { AttachmentValue } from "@/types/Message";
+import {
+    hasMarkdownSyntax,
+    MARKDOWN_PROSE_CLASS,
+    markdownToHtml,
+} from "@/utils/markdownUtil";
 
 interface ChatTarget {
     name: string;
@@ -68,6 +73,7 @@ export function ChatInterface({
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const [hasContent, setHasContent] = useState(false);
+    const [inputText, setInputText] = useState("");
     const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
     const [openStickerPicker, setOpenStickerPicker] = useState(false);
     const [openEmojiPicker, setOpenEmojiPicker] = useState(false);
@@ -85,7 +91,9 @@ export function ChatInterface({
     };
 
     const handleInput = () => {
-        setHasContent(Boolean(textareaRef.current?.value.trim()));
+        const val = textareaRef.current?.value ?? "";
+        setInputText(val);
+        setHasContent(Boolean(val.trim()));
         resizeTextarea();
     };
 
@@ -99,6 +107,7 @@ export function ChatInterface({
             textarea.value.slice(0, start) + text + textarea.value.slice(end);
         textarea.focus();
         textarea.setSelectionRange(start + text.length, start + text.length);
+        setInputText(textarea.value);
         setHasContent(Boolean(textarea.value.trim()));
         resizeTextarea();
     };
@@ -166,6 +175,7 @@ export function ChatInterface({
         onSend(makePayload(type, text, attachments));
 
         if (textareaRef.current) textareaRef.current.value = "";
+        setInputText("");
         setHasContent(false);
         setPendingFiles([]);
         setOpenStickerPicker(false);
@@ -312,6 +322,20 @@ export function ChatInterface({
                         onChange={handleFileSelect}
                     />
 
+                    {hasMarkdownSyntax(inputText) && (
+                        <div className="mx-3 mb-2 px-3 py-2 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 max-h-28 overflow-y-auto">
+                            <p className="text-[11px] font-semibold text-gray-400 mb-1">
+                                Xem trước:
+                            </p>
+                            <div
+                                className={MARKDOWN_PROSE_CLASS}
+                                dangerouslySetInnerHTML={{
+                                    __html: markdownToHtml(inputText),
+                                }}
+                            />
+                        </div>
+                    )}
+
                     <div className="min-h-4 flex p-2 pt-0">
                         <textarea
                             className="min-w-0 text-md bg-neutral-200/75 rounded-3xl p-2 ps-4 flex-1 resize-none border-none outline-none focus:ring-0 focus:ring-offset-0"
@@ -322,18 +346,25 @@ export function ChatInterface({
                         />
 
                         <div className="flex items-start px-3 justify-end gap-3">
-                            <div className="flex items-start justify-end gap-3 pt-2">
+                            <div className="relative flex items-start justify-end gap-3 pt-2">
                                 <Image
                                     size="1.5rem"
                                     className={`text-gray-600 hover:text-blue-600 transition-colors ${isUploading ? "cursor-not-allowed opacity-40" : "cursor-pointer"}`}
                                     onClick={() => {
-                                        if (!isUploading) fileInputRef.current?.click();
+                                        if (!isUploading) {
+                                            setOpenStickerPicker(false);
+                                            setOpenEmojiPicker(false);
+                                            fileInputRef.current?.click();
+                                        }
                                     }}
                                 />
                                 <Sticker
                                     size="1.5rem"
                                     className="cursor-pointer text-gray-600 hover:text-blue-600 transition-colors"
-                                    onClick={() => setOpenStickerPicker((open) => !open)}
+                                    onClick={() => {
+                                        setOpenEmojiPicker(false);
+                                        setOpenStickerPicker((open) => !open);
+                                    }}
                                 />
                                 {openStickerPicker && (
                                     <StickerPicker
@@ -347,7 +378,10 @@ export function ChatInterface({
                                 <Smile
                                     size="1.5rem"
                                     className="cursor-pointer text-gray-600 hover:text-blue-600 transition-colors"
-                                    onClick={() => setOpenEmojiPicker((open) => !open)}
+                                    onClick={() => {
+                                        setOpenStickerPicker(false);
+                                        setOpenEmojiPicker((open) => !open);
+                                    }}
                                 />
                                 {openEmojiPicker && (
                                     <EmojiCustomPicker
