@@ -1,11 +1,15 @@
 import { useEffect, useState, type SubmitEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import { Lock, User } from "lucide-react";
 import { WebsocketInstance } from "@/socket/WebsocketInstance";
 import { WebSocketEvent } from "@/socket/types/WebSoketMessage";
+import { loginSuccess } from "@/store/slice/authSlice";
+import type { AppDispatch } from "@/store/store";
 
 export default function Login() {
   const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -18,13 +22,17 @@ export default function Login() {
       if (res.status === "success") {
         localStorage.setItem("re_login_code", res.data.RE_LOGIN_CODE);
         localStorage.setItem("username", username.trim());
+        dispatch(loginSuccess({
+          username: username.trim(),
+          reLoginCode: res.data.RE_LOGIN_CODE,
+        }));
         navigate("/chat");
       } else {
         setError("Đăng nhập thất bại, sai tên đăng nhập hoặc mật khẩu");
       }
     });
     return unsubscribe;
-  }, [navigate, username]);
+  }, [dispatch, navigate, username]);
 
   function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
