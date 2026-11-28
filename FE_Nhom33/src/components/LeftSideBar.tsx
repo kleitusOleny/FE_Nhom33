@@ -16,7 +16,7 @@ import type { AppDispatch, RootState } from "@/store/store";
 
 export default function LeftSideBar() {
   const dispatch = useDispatch<AppDispatch>();
-  const { userList, currentTarget, loadingUserList } = useSelector(
+  const { userList, currentTarget, onlineUsers, loadingUserList } = useSelector(
     (state: RootState) => state.chat
   );
 
@@ -186,6 +186,7 @@ export default function LeftSideBar() {
                 key={`0-${chat.name}`}
                 chat={chat}
                 isSelected={isSelected}
+                isOnline={Boolean(onlineUsers[chat.name])}
                 onSelect={handleSelectChat}
               />
             );

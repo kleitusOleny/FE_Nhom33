@@ -55,22 +55,13 @@ function extractAttachmentsFromMessages(messages: ChatMessage[]) {
 
 export default function RightSideBar() {
     const dispatch = useDispatch<AppDispatch>();
-    const {currentTarget, roomHistory, peopleHistory} = useSelector((state: RootState) => state.chat);
+    const {currentTarget, roomHistory, peopleHistory, onlineUsers} = useSelector((state: RootState) => state.chat);
 
-    const [onlineUsers, setOnlineUsers] = useState<Record<string, boolean>>({});
     const [leaveError, setLeaveError] = useState<string | null>(null);
-    const pendingOnlineUserRef = useRef("");
     const pendingLeaveRoomRef = useRef("");
 
     useEffect(() => {
         const ws = WebsocketInstance.getInstance();
-
-        const unsubCheckOnline = ws.subscribe(WebSocketEvent.CHECK_USER_ONLINE, (res) => {
-            const user = pendingOnlineUserRef.current;
-            if (res.status === "success" && user) {
-                setOnlineUsers((prev) => ({...prev, [user]: res.data.status}));
-            }
-        });
 
         const unsubOutRoom = ws.subscribe(WebSocketEvent.OUT_ROOM, (res) => {
             const roomName = pendingLeaveRoomRef.current;
@@ -86,16 +77,9 @@ export default function RightSideBar() {
         });
 
         return () => {
-            unsubCheckOnline();
             unsubOutRoom();
         };
     }, [dispatch]);
-
-    useEffect(() => {
-        if (!currentTarget || currentTarget.type !== 0) return;
-        pendingOnlineUserRef.current = currentTarget.name;
-        chatSocketService.checkUserOnline(currentTarget.name);
-    }, [currentTarget]);
 
     const isGroup = currentTarget?.type === 1;
     const roomInfo = currentTarget && isGroup ? roomHistory[currentTarget.name] : undefined;

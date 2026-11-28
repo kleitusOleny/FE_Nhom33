@@ -1,11 +1,11 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { WebsocketInstance } from "@/socket/WebsocketInstance";
 import { WebSocketEvent } from "@/socket/types/WebSoketMessage";
 import { chatSocketService } from "@/services/chatSocketService";
 import {
-  addIncomingMessage, setCurrentTarget, setPeopleHistory, setRoomHistory, setUserList,
+  addIncomingMessage, setCurrentTarget, setPeopleHistory, setRoomHistory, setUserList, setUserOnlineStatus,
   type ChatMessage, type ChatTarget,
 } from "@/store/slice/chatSlice";
 
@@ -19,9 +19,20 @@ export function useChatSocket(enabled: boolean) {
   );
 
   const currentTargetRef = useRef<ChatTarget | null>(currentTarget);
+  const onlineCheckQueueRef = useRef<string[]>([]);
+
   useEffect(() => {
     currentTargetRef.current = currentTarget;
   }, [currentTarget]);
+
+  const enqueueOnlineCheck = useCallback((username: string) => {
+    const queue = onlineCheckQueueRef.current;
+    if (!username || queue.includes(username)) return;
+    queue.push(username);
+    if (queue.length === 1) {
+      chatSocketService.checkUserOnline(username);
+    }
+  }, []);
 
   useEffect(() => {
     if (!enabled) return;
@@ -37,8 +48,25 @@ export function useChatSocket(enabled: boolean) {
           actionTime: item.actionTime,
         }));
         dispatch(setUserList(mapped));
+        mapped
+          .filter((item) => item.type === 0)
+          .forEach((item) => enqueueOnlineCheck(item.name));
       }
     });
+
+    const unsubCheckOnline = ws.subscribe(
+      WebSocketEvent.CHECK_USER_ONLINE,
+      (res) => {
+        const username = onlineCheckQueueRef.current.shift();
+        if (res.status === "success" && username) {
+          dispatch(setUserOnlineStatus({ username, status: res.data.status }));
+        }
+        const nextUser = onlineCheckQueueRef.current[0];
+        if (nextUser) {
+          chatSocketService.checkUserOnline(nextUser);
+        }
+      }
+    );
 
     const unsubPeopleHistory = ws.subscribe(
       WebSocketEvent.GET_PEOPLE_CHAT_MES,
@@ -139,16 +167,20 @@ export function useChatSocket(enabled: boolean) {
 
     return () => {
       unsubUserList();
+      unsubCheckOnline();
       unsubPeopleHistory();
       unsubRoomHistory();
       unsubSendChat();
       unsubReLogin();
       unsubAuth();
     };
-  }, [dispatch, enabled, navigate]);
+  }, [dispatch, enabled, enqueueOnlineCheck, navigate]);
 
   useEffect(() => {
     if (!enabled || !currentTarget) return;
     chatSocketService.fetchChatHistory(currentTarget, 1);
-  }, [currentTarget, enabled]);
+    if (currentTarget.type === 0) {
+      enqueueOnlineCheck(currentTarget.name);
+    }
+  }, [currentTarget, enabled, enqueueOnlineCheck]);
 }

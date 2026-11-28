@@ -33,6 +33,7 @@ interface ChatState {
   currentTarget: ChatTarget | null;
   peopleHistory: Record<string, ChatMessage[]>;
   roomHistory: Record<string, RoomData>;
+  onlineUsers: Record<string, boolean>;
   loadingUserList: boolean;
   loadingMessages: boolean;
   error: string | null;
@@ -43,6 +44,7 @@ const initialState: ChatState = {
   currentTarget: null,
   peopleHistory: {},
   roomHistory: {},
+  onlineUsers: {},
   loadingUserList: false,
   loadingMessages: false,
   error: null,
@@ -176,6 +178,12 @@ const chatSlice = createSlice({
         });
       }
     },
+    setUserOnlineStatus(
+      state,
+      action: PayloadAction<{ username: string; status: boolean }>
+    ) {
+      state.onlineUsers[action.payload.username] = action.payload.status;
+    },
     resetChatState() {
       return initialState;
     },
@@ -193,6 +201,7 @@ export const {
   setPeopleHistory,
   setRoomHistory,
   addIncomingMessage,
+  setUserOnlineStatus,
   resetChatState,
 } = chatSlice.actions;
 
